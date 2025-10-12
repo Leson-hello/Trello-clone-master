@@ -1,7 +1,7 @@
 # Trello-Clone
 A new Kotlin project to manage and assign tasks.
 
-- 👋 Hi, I’m VIshal Karangale
+
 
 # Installation
 
