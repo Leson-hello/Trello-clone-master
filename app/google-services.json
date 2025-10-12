@@ -1,0 +1,67 @@
+{
+  "project_info": {
+    "project_number": "131576573607",
+    "project_id": "trello-clone-master-39c85",
+    "storage_bucket": "trello-clone-master-39c85.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:131576573607:android:3b82c7c2cbcc9e5c1c3582",
+        "android_client_info": {
+          "package_name": "com.example.trelloclonemaster3"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyACR3FVpx5ct8dskRSNLvIeCOqm1q4dXkU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:131576573607:android:0714b5b1c042a2ba1c3582",
+        "android_client_info": {
+          "package_name": "com.vk.trelloclonemaster1"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyACR3FVpx5ct8dskRSNLvIeCOqm1q4dXkU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:131576573607:android:1fe79d3ed81bc5ca1c3582",
+        "android_client_info": {
+          "package_name": "com.vk.trelloclonemaster3"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyACR3FVpx5ct8dskRSNLvIeCOqm1q4dXkU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
