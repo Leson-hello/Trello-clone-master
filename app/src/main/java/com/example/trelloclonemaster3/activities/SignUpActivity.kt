@@ -1,12 +1,16 @@
 package com.example.trelloclonemaster3.activities
 
+import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.text.TextUtils
 import android.util.Log
 import android.view.WindowManager
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
+import com.example.trelloclonemaster3.MainActivity
 
 import com.example.trelloclonemaster3.R
 import com.example.trelloclonemaster3.firebase.FirestoreClass
@@ -47,12 +51,22 @@ class SignUpActivity : BaseActivity() {
         }
     }
 
+    /**
+     * Phương thức này được gọi từ FirestoreClass sau khi User được lưu thành công vào Firestore.
+     * Logic: Ẩn tiến trình, chờ 2 giây (theo yêu cầu), sau đó chuyển sang Activity chính.
+     */
     fun userRegisteredSucess(){
+        // Bước 1: Log, Toast và Ẩn hộp thoại ngay khi Firebase/Firestore hoàn tất.
         Log.e("Login","registered Successful")
         Toast.makeText(this,"registered Successful",Toast.LENGTH_SHORT).show()
         hideCustomProgressDialog()
-        FirebaseAuth.getInstance().signOut()
-        finish()
+
+        // Bước 2: Dùng Handler để tạo độ trễ 2 giây (2000ms) trước khi chuyển màn hình.
+        Handler(Looper.getMainLooper()).postDelayed({
+            // Chuyển Activity sau khi chờ 2000ms (2 giây)
+            startActivity(Intent(this, MainActivity::class.java))
+            finish()
+        }, 2000) // <-- Độ trễ cố định 2000ms
     }
 
     private fun registerUser(){
@@ -62,25 +76,40 @@ class SignUpActivity : BaseActivity() {
 
         if(validateForm(name,eMail,password)){
             showCustomProgressBar()
+
             FirebaseAuth.getInstance().createUserWithEmailAndPassword(eMail,password).addOnCompleteListener {
-                task ->
+                    task ->
                 if (task.isSuccessful){
                     val firebaseUser: FirebaseUser = task.result!!.user!!
                     val registeredEmail = firebaseUser.email
+
+                    // Tạo đối tượng User và lưu vào Firestore
                     val user = User(firebaseUser.uid,name,eMail)
                     Log.e("Sign up","$name is registered with $registeredEmail ==> $user")
                     FirestoreClass().registerUser(this,user)
+
+                    // Lưu ý: hideCustomProgressDialog() sẽ được gọi trong userRegisteredSucess()
+
                 }else {
-                    Log.e("Sign Up","$name is not registered")
-                    Toast.makeText(this,"$name is not registered ",Toast.LENGTH_SHORT).show()
-                    finish()
+                    // THẤT BẠI: CẦN ẨN HỘP THOẠI VÀ HIỂN THỊ LỖI CHI TIẾT
+                    hideCustomProgressDialog() // <--- SỬA: ẨN HỘP THOẠI KHI THẤT BẠI
+
+                    val errorMessage = task.exception?.message ?: "Unknown registration error"
+
+                    Log.e("Sign Up", "Registration failed: $errorMessage")
+                    Toast.makeText(
+                        this,
+                        "Registration Failed: $errorMessage",
+                        Toast.LENGTH_LONG
+                    ).show()
+
+                    // KHÔNG NÊN GỌI finish() ở đây, để người dùng sửa lại thông tin
                 }
             }
         }
-
-
     }
 
+    // Sửa logic trong validateForm để hiển thị đúng thông báo lỗi
     private fun validateForm(name: String,eMail: String,passoward: String): Boolean{
         return when{
             TextUtils.isEmpty(name) -> {
@@ -88,11 +117,11 @@ class SignUpActivity : BaseActivity() {
                 false
             }
             TextUtils.isEmpty(eMail) -> {
-                showErrorSnackBar("Please Enter a Name")
+                showErrorSnackBar("Please Enter an Email") // Sửa thông báo lỗi
                 false
             }
             TextUtils.isEmpty(passoward) -> {
-                showErrorSnackBar("Please Enter a Name")
+                showErrorSnackBar("Please Enter a Password") // Sửa thông báo lỗi
                 false
             }else -> {
                 true

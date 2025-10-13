@@ -16,13 +16,30 @@ class FirestoreClass {
 
     private val mFireStore = FirebaseFirestore.getInstance()
 
-    fun registerUser(activity: SignUpActivity,userInfo: User){
-        mFireStore.collection(Constants.USERS).document(getCurrentUserID()).set(userInfo, SetOptions.merge())
-                .addOnSuccessListener {
-                    activity.userRegisteredSucess()
-                }.addOnFailureListener {
-                    Log.e("sign Up","Unable to sign Up, please try again later")
-                }
+    // Trong FirestoreClass.kt
+    fun registerUser(activity: SignUpActivity, userInfo: User){
+        mFireStore.collection(Constants.USERS)
+            .document(getCurrentUserID())
+            .set(userInfo, SetOptions.merge())
+            .addOnSuccessListener {
+                // THÀNH CÔNG: Chuyển sang Activity chính và ẩn tiến trình
+                activity.userRegisteredSucess()
+            }
+            .addOnFailureListener { exception -> // SỬA: Lấy exception để có thông báo lỗi
+
+                // THẤT BẠI: Cần ẩn tiến trình và thông báo cho người dùng
+                activity.hideCustomProgressDialog() // <--- KHẮC PHỤC LỖI TREO
+
+                val errorMessage = exception.message ?: "Unknown Firestore registration error"
+
+                Log.e("sign Up", "Firestore error: $errorMessage", exception)
+
+                Toast.makeText(
+                    activity,
+                    "Unable to sign up. Firestore Error: $errorMessage",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
     }
 
     fun loadUserData(activity: Activity, readBoardList: Boolean = false){
