@@ -23,16 +23,34 @@ import com.example.trelloclonemaster3.utils.Constants
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.ArrayList
-
+/*
+* Các chức năng chính của màn hình này bao gồm:
+Thay đổi tên của thẻ.
+Chọn một nhãn màu (label color).
+Gán hoặc bỏ gán thành viên (members) vào thẻ.
+Đặt hoặc thay đổi ngày hết hạn (due date).
+Xóa thẻ khỏi danh sách.
+* */
 class CardDetailsActivity : BaseActivity() {
-
+// Lưu trữ toàn bộ thông tin của cái bảng (Board) hiện tại.
+    // Activity này sẽ chỉnh sửa trực tiếp dữ liệu bên trong đối tượng này.
     private lateinit var mBoardDetails: Board
+
+    //mTaskListPosition và mCardListPosition:
+    // Đây là hai "tọa độ" quan trọng để xác định chính xác thẻ nào đang được sửa.
+
+    //mTaskListPosition: Vị trí của danh sách công việc (cột) trong bảng.
+    //
+    //mCardListPosition: Vị trí của thẻ bên trong danh sách công việc đó.
     private var mTaskListPosition: Int = -1
     private var mCardListPosition: Int = -1
 
+    //mSelectedColor: Lưu mã màu hex (ví dụ: #43C86F) mà người dùng đã chọn cho nhãn.
     private var mSelectedColor = ""
+    //mAssignedMembersDetailList: Lưu danh sách tất cả thành viên của bảng, được dùng để hiển thị trong dialog chọn thành viên.
     private lateinit var mAssignedMembersDetailList: ArrayList<User>
 
+    // mSelectedDueDateMilliSecond: Lưu ngày hết hạn đã chọn dưới dạng mili giây (milliseconds).
     private var mSelectedDueDateMilliSecond: Long = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
