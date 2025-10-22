@@ -27,6 +27,7 @@ open class BoardItemAdapter(private val context: Context,private var list: Array
                 )
         )
     }
+    //ok tiếp sau
 
     @SuppressLint("SetTextI18n")
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
