@@ -8,13 +8,13 @@ import android.text.TextUtils
 import android.util.Log
 import android.view.WindowManager
 import android.widget.Button
-import android.widget.TextView
+import android.widget.EditText
 import android.widget.Toast
 import com.example.trelloclonemaster3.MainActivity
-
 import com.example.trelloclonemaster3.R
 import com.example.trelloclonemaster3.firebase.FirestoreClass
 import com.example.trelloclonemaster3.model.User
+import com.google.android.material.textfield.TextInputLayout
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 
@@ -51,30 +51,30 @@ class SignUpActivity : BaseActivity() {
         }
     }
 
-    /**
-     * Phương thức này được gọi từ FirestoreClass sau khi User được lưu thành công vào Firestore.
-     * Logic: Ẩn tiến trình, chờ 2 giây (theo yêu cầu), sau đó chuyển sang Activity chính.
-     */
     fun userRegisteredSucess(){
-        // Bước 1: Log, Toast và Ẩn hộp thoại ngay khi Firebase/Firestore hoàn tất.
         Log.e("Login","registered Successful")
         Toast.makeText(this,"registered Successful",Toast.LENGTH_SHORT).show()
         hideCustomProgressDialog()
 
-        // Bước 2: Dùng Handler để tạo độ trễ 2 giây (2000ms) trước khi chuyển màn hình.
         Handler(Looper.getMainLooper()).postDelayed({
-            // Chuyển Activity sau khi chờ 2000ms (2 giây)
             startActivity(Intent(this, MainActivity::class.java))
             finish()
-        }, 2000) // <-- Độ trễ cố định 2000ms
+        }, 2000)
     }
 
     private fun registerUser(){
-        val name: String = findViewById<TextView>(R.id.et_name).text.toString().trim {it <= ' '}
-        val eMail: String = findViewById<TextView>(R.id.et_email).text.toString().trim { it <= ' ' }
-        val password: String = findViewById<TextView>(R.id.et_password).text.toString().trim { it <= ' ' }
+        val name: String = findViewById<EditText>(R.id.et_name).text.toString().trim {it <= ' '}
+        val eMail: String = findViewById<EditText>(R.id.et_email).text.toString().trim { it <= ' ' }
+        val password: String = findViewById<EditText>(R.id.et_password).text.toString().trim { it <= ' ' }
+        val confirmPassword: String = findViewById<EditText>(R.id.et_confirm_password).text.toString().trim { it <= ' ' }
 
-        if(validateForm(name,eMail,password)){
+        val tilName = findViewById<TextInputLayout>(R.id.til_name)
+        val tilEmail = findViewById<TextInputLayout>(R.id.til_email)
+        val tilPassword = findViewById<TextInputLayout>(R.id.til_password)
+        val tilConfirmPassword = findViewById<TextInputLayout>(R.id.til_confirm_password)
+
+
+        if(validateForm(name, eMail, password, confirmPassword, tilName, tilEmail, tilPassword, tilConfirmPassword)){
             showCustomProgressBar()
 
             FirebaseAuth.getInstance().createUserWithEmailAndPassword(eMail,password).addOnCompleteListener {
@@ -83,16 +83,13 @@ class SignUpActivity : BaseActivity() {
                     val firebaseUser: FirebaseUser = task.result!!.user!!
                     val registeredEmail = firebaseUser.email
 
-                    // Tạo đối tượng User và lưu vào Firestore
                     val user = User(firebaseUser.uid,name,eMail)
                     Log.e("Sign up","$name is registered with $registeredEmail ==> $user")
                     FirestoreClass().registerUser(this,user)
 
-                    // Lưu ý: hideCustomProgressDialog() sẽ được gọi trong userRegisteredSucess()
 
                 }else {
-                    // THẤT BẠI: CẦN ẨN HỘP THOẠI VÀ HIỂN THỊ LỖI CHI TIẾT
-                    hideCustomProgressDialog() // <--- SỬA: ẨN HỘP THOẠI KHI THẤT BẠI
+                    hideCustomProgressDialog()
 
                     val errorMessage = task.exception?.message ?: "Unknown registration error"
 
@@ -102,28 +99,48 @@ class SignUpActivity : BaseActivity() {
                         "Registration Failed: $errorMessage",
                         Toast.LENGTH_LONG
                     ).show()
-
-                    // KHÔNG NÊN GỌI finish() ở đây, để người dùng sửa lại thông tin
                 }
             }
         }
     }
 
-    // Sửa logic trong validateForm để hiển thị đúng thông báo lỗi
-    private fun validateForm(name: String,eMail: String,passoward: String): Boolean{
+    private fun validateForm(
+        name: String,
+        eMail: String,
+        passoward: String,
+        confirmPassword: String,
+        tilName: TextInputLayout,
+        tilEmail: TextInputLayout,
+        tilPassword: TextInputLayout,
+        tilConfirmPassword: TextInputLayout
+    ): Boolean{
+        tilName.error = null
+        tilEmail.error = null
+        tilPassword.error = null
+        tilConfirmPassword.error = null
+
         return when{
             TextUtils.isEmpty(name) -> {
-                showErrorSnackBar("Please Enter a Name")
+                tilName.error = "Please Enter a Name"
                 false
             }
             TextUtils.isEmpty(eMail) -> {
-                showErrorSnackBar("Please Enter an Email") // Sửa thông báo lỗi
+                tilEmail.error = "Please Enter an Email"
                 false
             }
             TextUtils.isEmpty(passoward) -> {
-                showErrorSnackBar("Please Enter a Password") // Sửa thông báo lỗi
+                tilPassword.error = "Please Enter a Password"
                 false
-            }else -> {
+            }
+            TextUtils.isEmpty(confirmPassword) -> {
+                tilConfirmPassword.error = "Please confirm your password"
+                false
+            }
+            passoward != confirmPassword -> {
+                tilConfirmPassword.error = "Password and Confirm Password do not match"
+                false
+            }
+            else -> {
                 true
             }
         }

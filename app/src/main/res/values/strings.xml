@@ -14,6 +14,7 @@
     <string name="email">Email</string>
 
     <string name="sign_in_description_text">Enter your name, email id and password, to register with us.</string>
+    <string name="forgot_password">Forgot Password?</string>
 
     <string name="please_click_back_again_to_exit">Please click back again to exit.</string>
     <string name="please_wait">Please Wait&#8230;</string>
@@ -27,6 +28,7 @@
     <string name="create_board_title">Create Board</string>
     <string name="create">CREATE</string>
     <string name="board_name">Board Name</string>
+    <string name="project_description">Project Description</string>
     <string name="NoUnits">No Units Available</string>
 
     <string name="action_add_list">Add List</string>

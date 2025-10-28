@@ -34,6 +34,10 @@ class SignInActivity : BaseActivity() {
             signInRegisteredUser()
         }
 
+        findViewById<TextView>(R.id.tv_forgot_password).setOnClickListener { 
+            startActivity(Intent(this, ForgotPasswordActivity::class.java))
+        }
+
         setupActionBar()
     }
 

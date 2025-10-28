@@ -46,6 +46,11 @@
             android:exported="false"
             android:theme="@style/AppTheme.NoActionBar" />
         <activity
+            android:name=".activities.ForgotPasswordActivity"
+            android:screenOrientation="portrait"
+            android:exported="false"
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity
             android:name=".activities.BaseActivity"
             android:screenOrientation="portrait"
             android:exported="false"
