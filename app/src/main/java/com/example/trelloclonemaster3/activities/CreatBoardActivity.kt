@@ -110,8 +110,8 @@ class CreatBoardActivity : BaseActivity() {
 
         val etBoardName = findViewById<TextView>(R.id.et_board_name)
 
-        val assignedUsers: ArrayList<String> = ArrayList()
-        assignedUsers.add(getCurrentUserId())
+        val assignedUsers: HashMap<String, String> = HashMap()
+        assignedUsers[getCurrentUserId()] = "Manager"
 
         val board = Board(
                 etBoardName.text.toString(),

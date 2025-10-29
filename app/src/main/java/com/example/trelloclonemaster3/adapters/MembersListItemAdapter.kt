@@ -9,11 +9,13 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.example.trelloclonemaster3.R
+import com.example.trelloclonemaster3.model.Board
 import com.example.trelloclonemaster3.model.User
 import com.example.trelloclonemaster3.utils.Constants
 
 open class MembersListItemAdapter(private val context: Context,
-                                  private var list: ArrayList<User>
+                                  private var list: ArrayList<User>,
+                                  private val board: Board
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     private var onClickListener: OnClickListener? = null
@@ -41,7 +43,7 @@ open class MembersListItemAdapter(private val context: Context,
                     .into(holder.itemView.findViewById(R.id.iv_member_image))
 
             holder.itemView.findViewById<TextView>(R.id.tv_member_name).text = model.name
-            holder.itemView.findViewById<TextView>(R.id.tv_member_email).text = model.email
+            holder.itemView.findViewById<TextView>(R.id.tv_member_email).text = board.assignedTo[model.id]
 
             if (model.selected) {
                 holder.itemView.findViewById<ImageView>(R.id.iv_selected_member).visibility = View.VISIBLE

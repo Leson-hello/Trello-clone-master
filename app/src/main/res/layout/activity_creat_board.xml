@@ -79,6 +79,14 @@
 
                 </com.google.android.material.textfield.TextInputLayout>
 
+                <Switch
+                    android:id="@+id/switch_public_project"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/create_board_til_marginTop"
+                    android:text="@string/public_project"
+                    android:textSize="@dimen/et_text_size" />
+
                 <Button
                     android:id="@+id/btn_create"
                     android:layout_width="match_parent"

@@ -34,7 +34,7 @@ class MembersActivity : BaseActivity() {
         }
 
         showCustomProgressBar()
-        FirestoreClass().getAssignedMembersList(this,mBoardDetails.assignedTo)
+        FirestoreClass().getAssignedMembersList(this, mBoardDetails.assignedTo.keys)
     }
 
     private fun setupActionBar(){
@@ -58,13 +58,19 @@ class MembersActivity : BaseActivity() {
         rvMembersList.layoutManager = LinearLayoutManager(this)
         rvMembersList.setHasFixedSize(true)
 
-        val adapter = MembersListItemAdapter(this,list)
+        val adapter = MembersListItemAdapter(this, list, mBoardDetails)
         rvMembersList.adapter = adapter
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.menu_add_member,menu)
         return super.onCreateOptionsMenu(menu)
+    }
+
+    override fun onPrepareOptionsMenu(menu: Menu?): Boolean {
+        val addMemberMenuItem = menu?.findItem(R.id.action_add_member)
+        addMemberMenuItem?.isVisible = mBoardDetails.assignedTo[FirestoreClass().getCurrentUserID()] == "Manager"
+        return super.onPrepareOptionsMenu(menu)
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -101,7 +107,7 @@ class MembersActivity : BaseActivity() {
     }
 
     fun membersDetail(user: User){
-        mBoardDetails.assignedTo.add(user.id!!)
+        mBoardDetails.assignedTo[user.id!!] = "Member"
         FirestoreClass().assignMemberToBoard(this,mBoardDetails,user)
     }
 

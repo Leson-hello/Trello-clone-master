@@ -228,6 +228,7 @@ class CardDetailsActivity : BaseActivity() {
         tvSelectLabelColor.setBackgroundColor(Color.parseColor(mSelectedColor))
     }
 
+
     private fun labelColorsListDialog() {
 
         val colorsList: ArrayList<String> = colorsList()
@@ -265,6 +266,7 @@ class CardDetailsActivity : BaseActivity() {
         val listDialog = object : MembersListDialog(
                 this,
                 mAssignedMembersDetailList,
+                mBoardDetails,
                 "Select Member",
         ){
             override fun onItemSelected(user: User, action: String) {

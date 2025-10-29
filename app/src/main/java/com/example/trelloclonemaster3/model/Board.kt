@@ -4,30 +4,32 @@ import android.os.Parcel
 import android.os.Parcelable
 
 data class Board(
-        val name: String? = "",
-        val image: String? = "",
-        val createdBy: String? = "",
-        val assignedTo: ArrayList<String> = ArrayList(),
-        var documentId: String? = "",
-        var taskList: ArrayList<Tasks> = ArrayList()
-): Parcelable {
+    val name: String? = "",
+    val image: String? = "",
+    val createdBy: String? = "",
+    val assignedTo: HashMap<String, String> = HashMap(),
+    var documentId: String? = "",
+    var taskList: ArrayList<Tasks> = ArrayList(),
+    val isPublic: Boolean = false
+) : Parcelable {
     constructor(parcel: Parcel) : this(
-            parcel.readString(),
-            parcel.readString(),
-            parcel.readString(),
-            parcel.createStringArrayList()!!,
-            parcel.readString(),
-        parcel.createTypedArrayList(Tasks.CREATOR)!!
-    ) {
-    }
+        parcel.readString(),
+        parcel.readString(),
+        parcel.readString(),
+        parcel.readHashMap(String::class.java.classLoader) as HashMap<String, String>,
+        parcel.readString(),
+        parcel.createTypedArrayList(Tasks.CREATOR)!!,
+        parcel.readByte() != 0.toByte()
+    )
 
     override fun writeToParcel(parcel: Parcel, flags: Int) = with(parcel) {
-        parcel.writeString(name)
-        parcel.writeString(image)
-        parcel.writeString(createdBy)
-        parcel.writeStringList(assignedTo)
-        parcel.writeString(documentId)
-        parcel.writeTypedList(taskList)
+        writeString(name)
+        writeString(image)
+        writeString(createdBy)
+        writeMap(assignedTo)
+        writeString(documentId)
+        writeTypedList(taskList)
+        writeByte(if (isPublic) 1 else 0)
     }
 
     override fun describeContents(): Int {

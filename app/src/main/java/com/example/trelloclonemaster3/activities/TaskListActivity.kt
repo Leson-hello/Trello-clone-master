@@ -88,7 +88,7 @@ class TaskListActivity : BaseActivity() {
         setupActionBar()
 
         showCustomProgressBar()
-        FirestoreClass().getAssignedMembersList(this,mBoardDetails.assignedTo)
+        FirestoreClass().getAssignedMembersList(this,mBoardDetails.assignedTo.keys)
     }
 
     fun addUpdateTaskLIstSuccess(){

@@ -114,7 +114,7 @@ class FirestoreClass {
     }
 
     fun getBoardList(activity: MainActivity){
-        mFireStore.collection(Constants.BOARDS).whereArrayContains(Constants.ASSIGNED_TO,getCurrentUserID())
+        mFireStore.collection(Constants.BOARDS).whereGreaterThan("assignedTo.${getCurrentUserID()}", "")
                 .get().addOnSuccessListener {
                     document ->
                     val boardlist: ArrayList<Board> = ArrayList()
@@ -166,8 +166,8 @@ class FirestoreClass {
                 }
     }
 
-    fun getAssignedMembersList(activity: Activity,assignedTo: ArrayList<String>){
-        mFireStore.collection(Constants.USERS).whereIn(Constants.ID,assignedTo).get()
+    fun getAssignedMembersList(activity: Activity, assignedTo: Set<String>){
+        mFireStore.collection(Constants.USERS).whereIn(Constants.ID, assignedTo.toList()).get()
             .addOnSuccessListener {
                 document ->
                 val usersList: ArrayList<User> = ArrayList()
@@ -222,4 +222,3 @@ class FirestoreClass {
                 }
     }
 }
-

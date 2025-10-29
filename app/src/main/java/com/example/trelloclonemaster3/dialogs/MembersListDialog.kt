@@ -10,11 +10,13 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.trelloclonemaster3.R
 import com.example.trelloclonemaster3.adapters.MembersListItemAdapter
+import com.example.trelloclonemaster3.model.Board
 import com.example.trelloclonemaster3.model.User
 
 abstract class MembersListDialog(
         context: Context,
         private var list: ArrayList<User>,
+        private val board: Board,
         private val title: String = ""
 ) : Dialog(context) {
 
@@ -41,7 +43,7 @@ abstract class MembersListDialog(
         if (list.size > 0) {
 
             rvList.layoutManager = LinearLayoutManager(context)
-            adapter = MembersListItemAdapter(context, list)
+            adapter = MembersListItemAdapter(context, list, board)
             rvList.adapter = adapter
 
             adapter!!.setOnClickListener(object :
