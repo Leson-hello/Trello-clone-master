@@ -43,7 +43,7 @@ android {
 }
 def retrofit_version = "2.9.0"
 dependencies {
-
+    implementation("com.google.android.gms:play-services-maps:17.0.0")
     // Đảm bảo có dòng này và phiên bản mới nhất (ví dụ: 1.3.2)
     implementation 'androidx.recyclerview:recyclerview:1.3.2'
     // Tôi đề xuất dùng phiên bản 32.7.0 trở lên để tương thích tốt với AGP 8.x

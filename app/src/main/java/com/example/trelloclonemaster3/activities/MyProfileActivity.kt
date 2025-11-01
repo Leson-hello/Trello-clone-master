@@ -20,6 +20,7 @@ import com.example.trelloclonemaster3.utils.Constants
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
 import java.io.IOException
+import android.os.Build
 
 @Suppress("DEPRECATION")
 class MyProfileActivity : BaseActivity() {
@@ -39,14 +40,22 @@ class MyProfileActivity : BaseActivity() {
 
         val userImage = findViewById<ImageView>(R.id.iv_profile_user_image)
         userImage.setOnClickListener {
+            // Kiểm tra phiên bản Android để sử dụng quyền phù hợp
+            val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) { // Android 13 (API 33) trở lên
+                android.Manifest.permission.READ_MEDIA_IMAGES
+            } else { // Android 12 (API 32) trở xuống
+                android.Manifest.permission.READ_EXTERNAL_STORAGE
+            }
 
-            if(ContextCompat.checkSelfPermission(this,android.Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED){
+            if (ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED) {
+                // Quyền đã được cấp, mở trình chọn ảnh
                 Constants.showImagePicker(this)
-            }else{
+            } else {
+                // Quyền chưa được cấp, yêu cầu quyền từ người dùng
                 ActivityCompat.requestPermissions(
-                        this,
-                        arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE),
-                        Constants.READ_STORAGE_PERMISSION_CODE
+                    this,
+                    arrayOf(permission), // Yêu cầu quyền phù hợp với phiên bản Android
+                    Constants.READ_STORAGE_PERMISSION_CODE
                 )
             }
         }
@@ -159,29 +168,65 @@ class MyProfileActivity : BaseActivity() {
 
 
     private fun updateUserProfileData(){
+        // Lấy tham chiếu đến TextView một cách an toàn hơn
         val etName = findViewById<TextView>(R.id.et_name_my_profile)
         val etMobile = findViewById<TextView>(R.id.et_mobile_my_profile)
 
+        // Kiểm tra xem mUserDetails đã được khởi tạo chưa
+        // Đây là điều kiện tiên quyết để update profile
+        if (!::mUserDetails.isInitialized) {
+            hideCustomProgressDialog() // Hàm ẩn progress bar của bạn
+            Toast.makeText(this, "Thông tin người dùng chưa được tải. Vui lòng thử lại.", Toast.LENGTH_LONG).show()
+            return
+        }
 
         val userHashMap = HashMap<String, Any>()
 
-        if(mProfileUserImage!!.isNotEmpty() && mProfileUserImage != mUserDetails.image){
-            Log.e("Message","Image Worked")
-            userHashMap[Constants.IMAGE] = mProfileUserImage!!
+        // Sử dụng .let để xử lý mProfileUserImage một cách an toàn
+        mProfileUserImage?.let { image ->
+            // Đoạn code này chỉ chạy nếu mProfileUserImage không null.
+            // Bên trong này, 'image' là một biến non-nullable (String).
+            if (image.isNotEmpty() && image != mUserDetails.image) {
+                Log.e("Message", "Image Worked")
+                userHashMap[Constants.IMAGE] = image
+            }
         }
 
-        if(etName.text.toString() != mUserDetails.name){
+
+        // Lấy dữ liệu từ EditText một cách an toàn và so sánh với dữ liệu cũ
+        val nameFromEditText = etName?.text?.toString() ?: "" // Sử dụng ?. và Elvis operator để tránh NPE
+        if(nameFromEditText != mUserDetails.name){
             Log.e("Message","Name Text Worked")
-            userHashMap[Constants.NAME] = etName.text.toString()
+            userHashMap[Constants.NAME] = nameFromEditText
         }
 
-        if (etMobile.text.toString() != mUserDetails.mobile.toString()){
+        // Lấy dữ liệu từ Mobile EditText một cách an toàn
+        val mobileFromEditText = etMobile?.text?.toString() ?: "" // Sử dụng ?. và Elvis operator
+        if (mobileFromEditText.isNotEmpty() && mobileFromEditText != mUserDetails.mobile.toString()){
             Log.e("Message","Mobile Text Worked")
-            userHashMap[Constants.MOBILE] = etMobile.text.toString().toLong()
+            try {
+                userHashMap[Constants.MOBILE] = mobileFromEditText.toLong()
+            } catch (e: NumberFormatException) {
+                hideCustomProgressDialog()
+                Toast.makeText(this, "Số điện thoại không hợp lệ. Vui lòng nhập số hợp lệ.", Toast.LENGTH_LONG).show()
+                return // Dừng lại nếu số điện thoại không hợp lệ
+            }
+        }
+        // Trường hợp người dùng xóa số điện thoại
+        else if (mobileFromEditText.isEmpty() && mUserDetails.mobile != 0L) {
+            userHashMap[Constants.MOBILE] = 0L // Gán 0L nếu người dùng xóa số điện thoại
         }
 
-        FirestoreClass().updateUserProfileData(this@MyProfileActivity,userHashMap)
 
+        // Chỉ gọi update lên Firestore nếu có thay đổi
+        if(userHashMap.isNotEmpty()){
+            FirestoreClass().updateUserProfileData(this@MyProfileActivity,userHashMap)
+        } else {
+            hideCustomProgressDialog()
+            Toast.makeText(this, "Không có thay đổi nào để cập nhật.", Toast.LENGTH_SHORT).show()
+            setResult(Activity.RESULT_OK) // Có thể coi là thành công dù không có thay đổi
+            finish()
+        }
     }
 
     fun profileUpdateSuccess(){
