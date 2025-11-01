@@ -22,7 +22,7 @@
             android:layout_height="@dimen/item_board_image_size"
             android:contentDescription="@string/image_contentDescription"
             android:src="@drawable/ic_user_place_holder"
-            app:civ_border_color="@color/Primary_text_color"
+            app:civ_border_color="@color/primary_text_color"
             app:civ_border_width="@dimen/item_board_image_circular_border_width" />
 
         <LinearLayout
@@ -35,7 +35,7 @@
                 android:id="@+id/tv_name"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textColor="@color/Primary_text_color"
+                android:textColor="@color/primary_text_color"
                 android:textSize="@dimen/item_board_name_text_size"
                 tools:text="Board Name" />
 
@@ -43,7 +43,7 @@
                 android:id="@+id/tv_created_by"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textColor="@color/Secondary_text_color"
+                android:textColor="@color/secondary_text_color"
                 android:textSize="@dimen/item_board_created_by_text_size"
                 tools:text="Created By" />
         </LinearLayout>

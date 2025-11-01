@@ -2,15 +2,19 @@ package com.example.trelloclonemaster3.firebase
 
 import android.app.Activity
 import android.util.Log
-import android.widget.Toast
+import android.widget to Toast
 import com.example.trelloclonemaster3.MainActivity
 import com.example.trelloclonemaster3.activities.*
 import com.example.trelloclonemaster3.model.Board
 import com.example.trelloclonemaster3.model.User
 import com.example.trelloclonemaster3.utils.Constants
+import com.google.android.gms.tasks.Task
+import com.google.android.gms.tasks.Tasks
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.QuerySnapshot
 import com.google.firebase.firestore.SetOptions
+import com.example.trelloclonemaster3.model.JoinableProject // Import JoinableProject
 
 class FirestoreClass {
 
@@ -130,6 +134,170 @@ class FirestoreClass {
                     activity.hideCustomProgressDialog()
                 }
     }
+
+    // New method to fetch public boards
+    fun getPublicBoardList(activity: JoinProjectActivity) {
+        mFireStore.collection(Constants.BOARDS)
+            .whereEqualTo("isPublic", true)
+            .get()
+            .addOnSuccessListener { querySnapshot ->
+                val publicBoardList: ArrayList<JoinableProject> = ArrayList()
+                val currentUserID = getCurrentUserID()
+
+                for (document in querySnapshot.documents) {
+                    val board = document.toObject(Board::class.java)!!
+                    board.documentId = document.id
+
+                    val status = when {
+                        board.assignedTo.containsKey(currentUserID) && board.assignedTo[currentUserID] == "Manager" -> "Joined"
+                        board.assignedTo.containsKey(currentUserID) && board.assignedTo[currentUserID] == Constants.PENDING -> "Pending"
+                        else -> "NotJoined"
+                    }
+                    publicBoardList.add(
+                        JoinableProject(
+                            board.name ?: "",
+                            board.image ?: "",
+                            board.createdBy ?: "",
+                            board.assignedTo.keys.toCollection(ArrayList()),
+                            board.documentId ?: "",
+                            status
+                        )
+                    )
+                }
+                activity.populatePublicProjectsList(publicBoardList)
+                activity.hideCustomProgressDialog()
+            }
+            .addOnFailureListener { e ->
+                Log.e("PublicBoardList", "Error getting public boards", e)
+                activity.hideCustomProgressDialog()
+                Toast.makeText(activity, "Error getting public projects", Toast.LENGTH_SHORT).show()
+            }
+    }
+
+    fun sendJoinRequest(activity: JoinProjectActivity, boardDocumentId: String, currentUserId: String, boardCreatorId: String, requestingUserName: String, boardName: String) {
+        val assignedToHashMap = HashMap<String, Any>()
+        assignedToHashMap["${Constants.ASSIGNED_TO}.${currentUserId}"] = Constants.PENDING
+
+        mFireStore.collection(Constants.BOARDS).document(boardDocumentId)
+            .update(assignedToHashMap)
+            .addOnSuccessListener {
+                Log.e("Join Request", "Join request sent successfully for board: $boardDocumentId")
+                activity.joinRequestSentSuccess(boardDocumentId, currentUserId)
+                // Now get the board creator's FCM token and send a notification
+                getBoardCreatorDetails(activity, boardCreatorId, requestingUserName, boardName)
+            }
+            .addOnFailureListener { e ->
+                Log.e("Join Request", "Error sending join request to board: $boardDocumentId", e)
+                activity.hideCustomProgressDialog()
+                Toast.makeText(activity, "Failed to send join request. Please try again.", Toast.LENGTH_SHORT).show()
+            }
+    }
+
+    fun getBoardCreatorDetails(activity: JoinProjectActivity, creatorId: String, requestingUserName: String, boardName: String) {
+        mFireStore.collection(Constants.USERS).document(creatorId).get()
+            .addOnSuccessListener {
+                document ->
+                val user = document.toObject(User::class.java)!!
+                activity.sendNotificationToManager(user.fcmToken!!, requestingUserName, boardName)
+            }.addOnFailureListener {
+                    e ->
+                Log.e("Board Creator Details", "Error getting board creator details", e)
+                activity.hideCustomProgressDialog()
+                Toast.makeText(activity, "Failed to send notification to board manager.", Toast.LENGTH_SHORT).show()
+            }
+    }
+
+    fun getCurrentUserDetails(activity: BaseActivity) {
+        mFireStore.collection(Constants.USERS).document(getCurrentUserID()).get()
+            .addOnSuccessListener {
+                document ->
+                val user = document.toObject(User::class.java)!!
+                when (activity) {
+                    is JoinProjectActivity -> activity.onGetCurrentUserSuccess(user)
+                    is MembersActivity -> activity.onGetCurrentUserSuccess(user)
+                }
+            }.addOnFailureListener {
+                    e ->
+                Log.e("Current User Details", "Error getting current user details", e)
+                activity.hideCustomProgressDialog()
+                Toast.makeText(activity, "Failed to get current user details.", Toast.LENGTH_SHORT).show()
+            }
+    }
+
+    fun getPendingJoinRequestsList(activity: MembersActivity, board: Board) {
+        mFireStore.collection(Constants.BOARDS).document(board.documentId!!).get()
+            .addOnSuccessListener {
+                document ->
+                val boardData = document.toObject(Board::class.java)!!
+                val pendingUserIds = boardData.assignedTo.filter { it.value == Constants.PENDING }.keys
+
+                if (pendingUserIds.isNotEmpty()) {
+                    mFireStore.collection(Constants.USERS).whereIn(Constants.ID, pendingUserIds.toList()).get()
+                        .addOnSuccessListener {
+                            querySnapshot ->
+                            val pendingUsersList: ArrayList<User> = ArrayList()
+                            for (i in querySnapshot.documents) {
+                                val user = i.toObject(User::class.java)!!
+                                pendingUsersList.add(user)
+                            }
+                            activity.populatePendingRequestsList(pendingUsersList)
+                        }.addOnFailureListener {
+                                e ->
+                            Log.e("Pending Requests", "Error getting pending users", e)
+                            activity.hideCustomProgressDialog()
+                            Toast.makeText(activity, "Failed to get pending requests.", Toast.LENGTH_SHORT).show()
+                        }
+                } else {
+                    activity.populatePendingRequestsList(ArrayList())
+                    activity.hideCustomProgressDialog()
+                }
+            }
+            .addOnFailureListener { e ->
+                Log.e("Pending Requests", "Error getting board for pending requests", e)
+                activity.hideCustomProgressDialog()
+                Toast.makeText(activity, "Failed to get board details for pending requests.", Toast.LENGTH_SHORT).show()
+            }
+    }
+
+    fun updateMemberStatus(activity: MembersActivity, board: Board, user: User, status: String, requestingUserName: String) {
+        val assignedToHashMap = HashMap<String, Any>()
+        assignedToHashMap["${Constants.ASSIGNED_TO}.${user.id}"] = status
+
+        mFireStore.collection(Constants.BOARDS).document(board.documentId!!)
+            .update(assignedToHashMap)
+            .addOnSuccessListener {
+                if (status == "Member") {
+                    activity.memberApprovedSuccess(user)
+                    // Send notification to the user that their request has been approved.
+                    getUserDetailsForNotification(activity, user.id!!, board.name!!, requestingUserName, true)
+                } else { // Rejected
+                    activity.memberRejectedSuccess(user)
+                    // Send notification to the user that their request has been rejected.
+                    getUserDetailsForNotification(activity, user.id!!, board.name!!, requestingUserName, false)
+                }
+                Log.e("Member Status", "Member status updated successfully for user: ${user.id}")
+            }
+            .addOnFailureListener { e ->
+                Log.e("Member Status", "Error updating member status for user: ${user.id}", e)
+                activity.hideCustomProgressDialog()
+                Toast.makeText(activity, "Failed to update member status. Please try again.", Toast.LENGTH_SHORT).show()
+            }
+    }
+
+    fun getUserDetailsForNotification(activity: MembersActivity, userId: String, boardName: String, managerName: String, isApproved: Boolean) {
+        mFireStore.collection(Constants.USERS).document(userId).get()
+            .addOnSuccessListener {
+                document ->
+                val user = document.toObject(User::class.java)!!
+                activity.sendNotificationToUser(user.fcmToken!!, boardName, managerName, isApproved)
+            }.addOnFailureListener {
+                    e ->
+                Log.e("User Details for Notification", "Error getting user details for notification", e)
+                activity.hideCustomProgressDialog()
+                Toast.makeText(activity, "Failed to send notification to user.", Toast.LENGTH_SHORT).show()
+            }
+    }
+
 
     fun getBoardDetails(activity: TaskListActivity,documentId: String){
         mFireStore.collection(Constants.BOARDS).document(documentId)

@@ -21,7 +21,7 @@
             android:layout_height="@dimen/item_member_member_image_size"
             android:contentDescription="@string/image_contentDescription"
             android:src="@drawable/ic_user_place_holder"
-            app:civ_border_color="@color/Primary_text_color"
+            app:civ_border_color="@color/primary_text_color"
             app:civ_border_width="@dimen/item_member_image_circular_width_size" />
 
         <LinearLayout
@@ -35,7 +35,7 @@
                 android:id="@+id/tv_member_name"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textColor="@color/Primary_text_color"
+                android:textColor="@color/primary_text_color"
                 android:textSize="@dimen/item_member_name_text_size"
                 tools:text="Member Name" />
 
@@ -43,7 +43,7 @@
                 android:id="@+id/tv_member_email"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textColor="@color/Secondary_text_color"
+                android:textColor="@color/secondary_text_color"
                 android:textSize="@dimen/item_member_email_text_size"
                 tools:text="Email" />
         </LinearLayout>

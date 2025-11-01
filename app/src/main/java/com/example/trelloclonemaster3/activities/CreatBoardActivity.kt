@@ -8,6 +8,7 @@ import android.os.Bundle
 import android.util.Log
 import android.widget.Button
 import android.widget.ImageView
+import android.widget.Switch
 import android.widget.TextView
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
@@ -109,6 +110,7 @@ class CreatBoardActivity : BaseActivity() {
     private fun createBoard(){
 
         val etBoardName = findViewById<TextView>(R.id.et_board_name)
+        val switchPublicProject = findViewById<Switch>(R.id.switch_public_project)
 
         val assignedUsers: HashMap<String, String> = HashMap()
         assignedUsers[getCurrentUserId()] = "Manager"
@@ -118,6 +120,9 @@ class CreatBoardActivity : BaseActivity() {
                 mBoardImageURL,
                 mUserName,
                 assignedUsers,
+                "",
+                ArrayList(),
+                switchPublicProject.isChecked
         )
 
         FirestoreClass().createBoard(this,board)
@@ -153,6 +158,4 @@ class CreatBoardActivity : BaseActivity() {
             Toast.makeText(this,"Couldn't saveImage try again later ",Toast.LENGTH_SHORT).show()
         }
     }
-
-
 }

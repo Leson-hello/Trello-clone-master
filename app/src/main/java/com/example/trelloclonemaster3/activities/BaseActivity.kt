@@ -93,6 +93,10 @@ open class BaseActivity : AppCompatActivity() {
         }, 2000)
     }
 
+    fun showToast(message: String) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+    }
+
 
     //Hàm này dùng để hiển thị một Snackbar, một thanh thông báo hiện đại hơn Toast, thường xuất hiện ở cuối màn hình.
     //Snackbar.make(...): Tạo một Snackbar với nội dung là message và hiển thị trong một khoảng thời gian dài (LENGTH_LONG).

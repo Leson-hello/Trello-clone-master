@@ -15,7 +15,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/intro_screen_title_text_marginTop"
         android:text="@string/app_name"
-        android:textColor="@color/ColorAccent"
+        android:textColor="@color/colorAccent"
         android:textSize="@dimen/intro_screen_title_text_size"
         android:textStyle="bold" />
 
@@ -32,7 +32,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/lets_get_started_text_marginTop"
         android:text="@string/let_s_get_started_text"
-        android:textColor="@color/Primary_text_color"
+        android:textColor="@color/primary_text_color"
         android:textSize="@dimen/lets_get_started_text_size" />
 
     <TextView
@@ -44,7 +44,7 @@
         android:gravity="center"
         android:lineSpacingExtra="@dimen/intro_text_line_spacing_extra"
         android:text="@string/intro_text_description"
-        android:textColor="@color/Secondary_text_color"
+        android:textColor="@color/secondary_text_color"
         android:textSize="@dimen/intro_text_size" />
 
     <Button
@@ -78,7 +78,7 @@
         android:paddingTop="@dimen/btn_paddingTopBottom"
         android:paddingBottom="@dimen/btn_paddingTopBottom"
         android:text="@string/sign_up"
-        android:textColor="@color/ColorAccent"
+        android:textColor="@color/colorAccent"
         android:textSize="@dimen/btn_text_size" />
 
 </LinearLayout>

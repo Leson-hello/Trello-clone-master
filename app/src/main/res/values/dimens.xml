@@ -142,4 +142,14 @@
 
     <dimen name="item_selected_member_image_size">45dp</dimen>
 
+    <!-- Missing dimensions -->
+    <dimen name="default_margin">16dp</dimen>
+    <dimen name="et_padding">10dp</dimen>
+    <dimen name="no_content_found_text_size">18sp</dimen>
+    <dimen name="item_board_content_marginTopBottom">8dp</dimen>
+    <dimen name="item_board_content_marginStartEnd">16dp</dimen>
+    <dimen name="item_board_image_marginStart">10dp</dimen>
+    <dimen name="button_padding_horizontal">16dp</dimen>
+    <dimen name="item_board_action_button_text_size">16sp</dimen>
+
 </resources>

@@ -21,7 +21,7 @@
             android:gravity="center"
             android:padding="@dimen/task_item_add_item_text_padding"
             android:text="@string/action_add_list"
-            android:textColor="@color/ColorAccent"
+            android:textColor="@color/colorAccent"
             android:textSize="@dimen/task_item_add_item_text_size"
             android:visibility="gone"
             tools:visibility="visible" />
@@ -100,7 +100,7 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:padding="@dimen/task_item_title_text_padding"
-                    android:textColor="@color/Primary_text_color"
+                    android:textColor="@color/primary_text_color"
                     android:textSize="@dimen/task_item_title_text_size"
                     tools:text="Title" />
 
@@ -236,7 +236,7 @@
                 android:gravity="center"
                 android:padding="@dimen/task_item_add_item_text_padding"
                 android:text="@string/action_add_card"
-                android:textColor="@color/ColorAccent"
+                android:textColor="@color/colorAccent"
                 android:textSize="@dimen/task_item_add_item_text_size"
                 tools:visibility="visible" />
         </LinearLayout>

@@ -28,7 +28,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:padding="@dimen/dialog_list_title_padding"
-                android:textColor="@color/Primary_text_color"
+                android:textColor="@color/primary_text_color"
                 android:textSize="@dimen/dialog_list_title_text_size"
                 android:textStyle="bold"
                 android:visibility="visible"

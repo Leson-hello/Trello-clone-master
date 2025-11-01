@@ -17,7 +17,7 @@
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             android:background="?attr/colorPrimary"
-            app:popupTheme="@style/AppTheme.PopUpOverlay" />
+            app:popupTheme="@style/AppTheme.PopupOverlay" />
     </com.google.android.material.appbar.AppBarLayout>
 
     <LinearLayout
@@ -55,6 +55,22 @@
                         tools:text="Test" />
                 </com.google.android.material.textfield.TextInputLayout>
 
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/card_details_description_marginTop">
+
+                    <androidx.appcompat.widget.AppCompatEditText
+                        android:id="@+id/et_description_card_details"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="@string/hint_card_description"
+                        android:inputType="textMultiLine"
+                        android:minLines="3"
+                        android:gravity="top|start"
+                        android:textSize="@dimen/et_text_size" />
+                </com.google.android.material.textfield.TextInputLayout>
+
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
@@ -75,7 +91,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="@string/label_color"
-                    android:textColor="@color/Secondary_text_color"
+                    android:textColor="@color/secondary_text_color"
                     android:textSize="@dimen/card_details_label_text_size" />
 
                 <TextView
@@ -85,14 +101,14 @@
                     android:layout_marginTop="@dimen/card_details_value_marginTop"
                     android:padding="@dimen/card_details_value_padding"
                     android:text="@string/select_color"
-                    android:textColor="@color/Primary_text_color" />
+                    android:textColor="@color/primary_text_color" />
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/card_details_members_label_marginTop"
                     android:text="@string/members"
-                    android:textColor="@color/Secondary_text_color"
+                    android:textColor="@color/secondary_text_color"
                     android:textSize="@dimen/card_details_label_text_size" />
 
                 <TextView
@@ -102,7 +118,7 @@
                     android:layout_marginTop="@dimen/card_details_value_marginTop"
                     android:padding="@dimen/card_details_value_padding"
                     android:text="@string/select_members"
-                    android:textColor="@color/Primary_text_color" />
+                    android:textColor="@color/primary_text_color" />
 
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/rv_selected_members_list"
@@ -117,7 +133,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/card_details_members_label_marginTop"
                     android:text="@string/due_date"
-                    android:textColor="@color/Secondary_text_color"
+                    android:textColor="@color/secondary_text_color"
                     android:textSize="@dimen/card_details_label_text_size" />
 
                 <TextView
@@ -127,7 +143,7 @@
                     android:layout_marginTop="@dimen/card_details_value_marginTop"
                     android:padding="@dimen/card_details_value_padding"
                     android:text="@string/select_due_date"
-                    android:textColor="@color/Primary_text_color" />
+                    android:textColor="@color/primary_text_color" />
 
                 <Button
                     android:id="@+id/btn_update_card_details"

@@ -25,7 +25,7 @@
                 android:layout_height="wrap_content"
                 android:padding="@dimen/dialog_member_title_padding"
                 android:text="@string/search_member"
-                android:textColor="@color/Primary_text_color"
+                android:textColor="@color/primary_text_color"
                 android:textSize="@dimen/dialog_member_title_text_size"
                 android:textStyle="bold" />
 
@@ -65,7 +65,7 @@
                     android:gravity="center"
                     android:padding="@dimen/member_dialog_action_button_padding"
                     android:text="@string/add"
-                    android:textColor="@color/ColorAccent"
+                    android:textColor="@color/colorAccent"
                     android:textSize="@dimen/member_dialog_action_button_text_size" />
 
                 <TextView
@@ -77,7 +77,7 @@
                     android:gravity="center"
                     android:padding="@dimen/member_dialog_action_button_padding"
                     android:text="@string/cancel"
-                    android:textColor="@color/Secondary_text_color"
+                    android:textColor="@color/secondary_text_color"
                     android:textSize="@dimen/member_dialog_action_button_text_size" />
             </LinearLayout>
         </LinearLayout>

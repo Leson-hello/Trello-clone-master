@@ -1,0 +1,4 @@
+<resources>
+    <string name="hint_card_description">Description</string>
+    <string name="pending_join_requests">Pending Join Requests</string>
+</resources>

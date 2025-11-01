@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context=".activities.JoinProjectActivity">
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar_join_project_activity"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorPrimary"
+        app:popupTheme="@style/AppTheme.PopupOverlay"/>
+
+    <EditText
+        android:id="@+id/et_search_project"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/default_margin"
+        android:layout_marginEnd="@dimen/default_margin"
+        android:layout_marginTop="@dimen/default_margin"
+        android:hint="Search projects by name"
+        android:inputType="text"
+        android:maxLines="1"
+        android:singleLine="true"
+        android:padding="@dimen/et_padding"/>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rv_projects_list"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="@dimen/default_margin"/>
+
+    <TextView
+        android:id="@+id/tv_no_projects_found"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:text="No projects found."
+        android:textSize="@dimen/no_content_found_text_size"
+        android:textColor="@color/secondary_text_color"
+        android:visibility="gone"/>
+
+</LinearLayout>

@@ -31,7 +31,7 @@
             android:layout_marginEnd="@dimen/authentication_screen_marginStartEnd"
             android:gravity="center"
             android:text="@string/NoUnits"
-            android:textColor="@color/Secondary_text_color"
+            android:textColor="@color/secondary_text_color"
             android:textSize="@dimen/authentication_description_text_size" />
 
     </androidx.cardview.widget.CardView>
