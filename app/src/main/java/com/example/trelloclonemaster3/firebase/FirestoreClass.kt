@@ -2,7 +2,10 @@ package com.example.trelloclonemaster3.firebase
 
 import android.app.Activity
 import android.util.Log
-import android.widget to Toast
+
+import android.widget.Toast
+
+
 import com.example.trelloclonemaster3.MainActivity
 import com.example.trelloclonemaster3.activities.*
 import com.example.trelloclonemaster3.model.Board
