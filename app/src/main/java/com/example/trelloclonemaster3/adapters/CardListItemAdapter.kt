@@ -12,6 +12,7 @@ import com.example.trelloclonemaster3.R
 import com.example.trelloclonemaster3.activities.TaskListActivity
 import com.example.trelloclonemaster3.model.Card
 import com.example.trelloclonemaster3.model.SelectedMembers
+import com.example.trelloclonemaster3.model.TaskStatus
 
 open class CardListItemAdapter(private val context: Context, private var list: ArrayList<Card>):
         RecyclerView.Adapter<RecyclerView.ViewHolder>() {
@@ -36,6 +37,17 @@ open class CardListItemAdapter(private val context: Context, private var list: A
 
         if (holder is MyViewHolder) {
             holder.itemView.findViewById<TextView>(R.id.tv_card_name).text = model.name
+
+            // Set status display
+            val tvCardStatus = holder.itemView.findViewById<TextView>(R.id.tv_card_status)
+            tvCardStatus.text = model.status.displayName
+
+            // Set background based on status
+            when (model.status) {
+                TaskStatus.PENDING -> tvCardStatus.setBackgroundResource(R.drawable.status_background_pending)
+                TaskStatus.IN_PROGRESS -> tvCardStatus.setBackgroundResource(R.drawable.status_background_in_progress)
+                TaskStatus.COMPLETED -> tvCardStatus.setBackgroundResource(R.drawable.status_background_completed)
+            }
         }
 
         if(model.labelColor.isNotEmpty()){

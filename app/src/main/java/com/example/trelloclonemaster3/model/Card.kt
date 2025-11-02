@@ -9,6 +9,7 @@ data class Card(
      val assignedTo: ArrayList<String> = ArrayList(),
      val labelColor: String ="",
      val dueDate: Long = 0,
+     val status: TaskStatus = TaskStatus.PENDING,
 ): Parcelable {
     constructor(parcel: Parcel) : this(
             parcel.readString()!!,
@@ -16,6 +17,7 @@ data class Card(
             parcel.createStringArrayList()!!,
             parcel.readString()!!,
             parcel.readLong(),
+        TaskStatus.valueOf(parcel.readString()!!),
     )
 
     override fun writeToParcel(parcel: Parcel, flags: Int) = with(parcel) {
@@ -24,6 +26,7 @@ data class Card(
         parcel.writeStringList(assignedTo)
         parcel.writeString(labelColor)
         parcel.writeLong(dueDate)
+        parcel.writeString(status.name)
     }
 
     override fun describeContents(): Int {

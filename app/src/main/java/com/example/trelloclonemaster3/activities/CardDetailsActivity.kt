@@ -18,6 +18,8 @@ import com.example.trelloclonemaster3.adapters.CardsMembersListAdapter
 import com.example.trelloclonemaster3.dialogs.LabelColorListDialog
 import com.example.trelloclonemaster3.dialogs.MembersListDialog
 import com.example.trelloclonemaster3.firebase.FirestoreClass
+import com.example.trelloclonemaster3.model.TaskStatus
+import com.example.trelloclonemaster3.dialogs.StatusListDialog
 import com.example.trelloclonemaster3.model.*
 import com.example.trelloclonemaster3.utils.Constants
 import java.text.SimpleDateFormat
@@ -53,6 +55,9 @@ class CardDetailsActivity : BaseActivity() {
     // mSelectedDueDateMilliSecond: Lưu ngày hết hạn đã chọn dưới dạng mili giây (milliseconds).
     private var mSelectedDueDateMilliSecond: Long = 0
 
+    // Selected status for the card
+    private var mSelectedStatus: TaskStatus = TaskStatus.PENDING
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_card_details)
@@ -68,7 +73,7 @@ class CardDetailsActivity : BaseActivity() {
         btnUpdate.setOnClickListener {
             if(etCardNameDetail.text.toString().isNotEmpty()){
                 upDateCardDetails()
-            }else{
+            } else {
                 Toast.makeText(this,"Please enter a card name",Toast.LENGTH_SHORT).show()
             }
         }
@@ -102,6 +107,41 @@ class CardDetailsActivity : BaseActivity() {
         selectDueDate.setOnClickListener {
             showDataPicker()
         }
+
+        // Setup status selection
+        mSelectedStatus = mBoardDetails.taskList[mTaskListPosition].cards[mCardListPosition].status
+        setStatusDisplay()
+
+        val tvSelectStatus = findViewById<TextView>(R.id.tv_select_status)
+        tvSelectStatus.setOnClickListener {
+            statusSelectionDialog()
+        }
+    }
+
+    private fun setStatusDisplay() {
+        val tvSelectStatus = findViewById<TextView>(R.id.tv_select_status)
+        tvSelectStatus.text = mSelectedStatus.displayName
+
+        // Set background based on status
+        when (mSelectedStatus) {
+            TaskStatus.PENDING -> tvSelectStatus.setBackgroundResource(R.drawable.status_background_pending)
+            TaskStatus.IN_PROGRESS -> tvSelectStatus.setBackgroundResource(R.drawable.status_background_in_progress)
+            TaskStatus.COMPLETED -> tvSelectStatus.setBackgroundResource(R.drawable.status_background_completed)
+        }
+    }
+
+    private fun statusSelectionDialog() {
+        val listDialog = object : StatusListDialog(
+            this@CardDetailsActivity,
+            "Select Status",
+            mSelectedStatus
+        ) {
+            override fun onItemSelected(status: TaskStatus) {
+                mSelectedStatus = status
+                setStatusDisplay()
+            }
+        }
+        listDialog.show()
     }
 
     private fun setupActionBar(){
@@ -154,12 +194,12 @@ class CardDetailsActivity : BaseActivity() {
 
     private fun upDateCardDetails(){
         val card = Card(
-
                 findViewById<TextView>(R.id.et_name_card_details).text.toString(),
                 mBoardDetails.taskList[mTaskListPosition].cards[mCardListPosition].createdBy,
                 mBoardDetails.taskList[mTaskListPosition].cards[mCardListPosition].assignedTo,
                 mSelectedColor,
                 mSelectedDueDateMilliSecond,
+            mSelectedStatus,
         )
 
         val taskList: ArrayList<Tasks> = mBoardDetails.taskList

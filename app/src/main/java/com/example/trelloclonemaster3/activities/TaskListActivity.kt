@@ -14,6 +14,7 @@ import com.example.trelloclonemaster3.firebase.FirestoreClass
 import com.example.trelloclonemaster3.model.Board
 import com.example.trelloclonemaster3.model.Card
 import com.example.trelloclonemaster3.model.Tasks
+import com.example.trelloclonemaster3.model.TaskStatus
 import com.example.trelloclonemaster3.model.User
 import com.example.trelloclonemaster3.utils.Constants
 
@@ -131,7 +132,13 @@ class TaskListActivity : BaseActivity() {
         val cardAssignedUserList: ArrayList<String> = ArrayList()
         cardAssignedUserList.add(FirestoreClass().getCurrentUserID())
 
-        val card = Card(cardName,FirestoreClass().getCurrentUserID(),cardAssignedUserList)
+        val card = Card(
+            name = cardName,
+            createdBy = FirestoreClass().getCurrentUserID(),
+            assignedTo = cardAssignedUserList,
+            labelColor = "",
+            dueDate = 0L
+        )
 
         val cardList = mBoardDetails.taskList[position].cards
         cardList.add(card)

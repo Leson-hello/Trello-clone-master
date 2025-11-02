@@ -145,6 +145,26 @@
                     android:text="@string/select_due_date"
                     android:textColor="@color/primary_text_color" />
 
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/card_details_members_label_marginTop"
+                    android:text="Status"
+                    android:textColor="@color/secondary_text_color"
+                    android:textSize="@dimen/card_details_label_text_size" />
+
+                <TextView
+                    android:id="@+id/tv_select_status"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/card_details_value_marginTop"
+                    android:padding="@dimen/card_details_value_padding"
+                    android:text="Pending"
+                    android:textColor="@color/primary_text_color"
+                    android:background="@drawable/status_background_pending"
+                    android:textStyle="bold"
+                    android:gravity="center" />
+
                 <Button
                     android:id="@+id/btn_update_card_details"
                     android:layout_width="match_parent"
