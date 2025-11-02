@@ -99,6 +99,9 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
             R.id.nav_my_profile -> {
                 startActivityForResult(Intent(this,MyProfileActivity::class.java), MY_PROFILE_REQUEST_CODE)
             }
+            R.id.nav_find_projects -> {
+                startActivity(Intent(this, FindProjectsActivity::class.java))
+            }
             R.id.nav_sign_out -> {
                 FirebaseAuth.getInstance().signOut()
                 val intent = Intent(this,IntroActivity::class.java)

@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context=".activities.FindProjectsActivity">
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar_find_projects_activity"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="@color/colorPrimary"
+        android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
+        app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
+        app:title="@string/discover_projects"
+        app:titleTextColor="@color/white" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="@dimen/default_margin">
+
+        <!-- Search Bar -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="@dimen/default_margin"
+            app:boxBackgroundMode="outline"
+            app:boxCornerRadiusBottomEnd="@dimen/card_view_corner_radius"
+            app:boxCornerRadiusBottomStart="@dimen/card_view_corner_radius"
+            app:boxCornerRadiusTopEnd="@dimen/card_view_corner_radius"
+            app:boxCornerRadiusTopStart="@dimen/card_view_corner_radius"
+            app:startIconDrawable="@android:drawable/ic_menu_search">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/et_search_projects"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/search_projects_hint"
+                android:inputType="text"
+                android:maxLines="1"
+                android:textColor="@color/primary_text_color"
+                android:textSize="@dimen/et_text_size" />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+    </LinearLayout>
+
+    <!-- Progress Bar -->
+    <ProgressBar
+        android:id="@+id/pb_loading"
+        android:layout_width="@dimen/progress_bar_size"
+        android:layout_height="@dimen/progress_bar_size"
+        android:layout_gravity="center"
+        android:layout_marginTop="50dp"
+        android:visibility="gone" />
+
+    <!-- RecyclerView for Projects -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rv_projects_list"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:padding="@dimen/default_margin"
+        android:visibility="gone"
+        tools:listitem="@layout/item_joinable_project" />
+
+    <!-- No Projects Found Message -->
+    <TextView
+        android:id="@+id/tv_no_projects_available"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:text="@string/no_public_projects_available"
+        android:textColor="@color/secondary_text_color"
+        android:textSize="@dimen/no_content_found_text_size"
+        android:visibility="gone" />
+
+    <!-- No Search Results Message -->
+    <TextView
+        android:id="@+id/tv_no_search_results"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:text="@string/search_no_results"
+        android:textColor="@color/secondary_text_color"
+        android:textSize="@dimen/no_content_found_text_size"
+        android:visibility="gone" />
+
+</LinearLayout>

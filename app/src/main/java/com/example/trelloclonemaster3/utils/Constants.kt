@@ -5,6 +5,8 @@ import android.content.Intent
 import android.net.Uri
 import android.provider.MediaStore
 import android.webkit.MimeTypeMap
+import android.util.Log
+import com.example.trelloclonemaster3.model.Board
 
 object Constants {
 
@@ -43,5 +45,29 @@ object Constants {
         return MimeTypeMap.getSingleton().getExtensionFromMimeType(activity.contentResolver.getType(uri!!))
     }
 
+
+    // Debug helper functions
+    const val DEBUG_TAG = "TrelloCloneDebug"
+
+    fun logFirestoreQuery(collection: String, query: String) {
+        Log.d(DEBUG_TAG, "Firestore Query - Collection: $collection, Query: $query")
+    }
+
+    fun logFirestoreResult(collection: String, resultCount: Int) {
+        Log.d(DEBUG_TAG, "Firestore Result - Collection: $collection, Results: $resultCount")
+    }
+
+    fun logFirestoreError(collection: String, error: String) {
+        Log.e(DEBUG_TAG, "Firestore Error - Collection: $collection, Error: $error")
+    }
+
+    fun debugBoardInfo(board: Board, prefix: String = "") {
+        Log.d(DEBUG_TAG, "$prefix Board Debug Info:")
+        Log.d(DEBUG_TAG, "  - Name: ${board.name}")
+        Log.d(DEBUG_TAG, "  - IsPublic: ${board.isPublic}")
+        Log.d(DEBUG_TAG, "  - CreatedBy: ${board.createdBy}")
+        Log.d(DEBUG_TAG, "  - DocumentId: ${board.documentId}")
+        Log.d(DEBUG_TAG, "  - AssignedTo: ${board.assignedTo}")
+    }
 
 }

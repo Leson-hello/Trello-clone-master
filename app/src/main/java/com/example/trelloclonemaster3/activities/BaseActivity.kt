@@ -10,6 +10,7 @@ import androidx.core.content.ContextCompat
 import com.example.trelloclonemaster3.R
 import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.auth.FirebaseAuth
+import android.util.Log
 
 //Từ khóa open trong Kotlin cho phép các lớp khác có thể kế thừa (inherit) từ lớp này.
 // Nếu không có open, lớp này sẽ là final theo mặc định và không thể được kế thừa.
@@ -43,6 +44,9 @@ open class BaseActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         //setContentView(R.layout.activity_base): Gắn giao diện người dùng được định nghĩa trong file res/layout/activity_base.xml cho Activity này
         setContentView(R.layout.activity_base)
+
+        // Initialize Firestore with offline persistence to help with connectivity issues
+        initializeFirestore()
     }
 
     fun showCustomProgressBar() {
@@ -63,9 +67,28 @@ open class BaseActivity : AppCompatActivity() {
         //Dấu !! (non-null asserted operator) có nghĩa là bạn chắc chắn rằng
         // FirebaseAuth.getInstance().currentUser sẽ không bao giờ null
 
-
         // Sử dụng elvis operator (?:) để cung cấp giá trị mặc định
-        return FirebaseAuth.getInstance().currentUser?.uid ?: ""
+        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+        Log.d("BaseActivity", "getCurrentUserId: $userId")
+        return userId
+    }
+
+    // Add method to check if user is properly authenticated
+    fun isUserAuthenticated(): Boolean {
+        val currentUser = FirebaseAuth.getInstance().currentUser
+        val isAuthenticated = currentUser != null && !currentUser.uid.isNullOrEmpty()
+        Log.d("BaseActivity", "isUserAuthenticated: $isAuthenticated (User: ${currentUser?.email})")
+        return isAuthenticated
+    }
+
+    // Add method to handle authentication errors gracefully
+    fun handleAuthenticationError(context: String) {
+        Log.e("BaseActivity", "Authentication error in: $context")
+        showErrorSnackBar("Authentication error. Please sign in again.")
+
+        // Optional: Don't automatically redirect, let user decide
+        // startActivity(Intent(this, SignInActivity::class.java))
+        // finish()
     }
 
 
@@ -111,6 +134,21 @@ open class BaseActivity : AppCompatActivity() {
         snackBar.show()
     }
 
+    private fun initializeFirestore() {
+        try {
+            // Enable offline persistence for better connectivity
+            val settings = com.google.firebase.firestore.FirebaseFirestoreSettings.Builder()
+                .setPersistenceEnabled(true)
+                .build()
+            com.google.firebase.firestore.FirebaseFirestore.getInstance().firestoreSettings =
+                settings
+
+            Log.d("BaseActivity", "Firestore initialized successfully with offline persistence")
+        } catch (e: Exception) {
+            Log.e("BaseActivity", "Error initializing Firestore", e)
+            // Continue anyway - app should still work
+        }
+    }
 }/*
 findViewById(android.R.id.content)
 Khi bạn tạo một Activity, hệ thống Android không chỉ hiển thị layout của bạn.

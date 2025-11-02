@@ -63,4 +63,17 @@
 
     <string name="default_notification_channel_id">projemanag_notification_channel_id</string>
 
+    <!-- Project Discovery Feature -->
+    <string name="find_projects">Find Projects</string>
+    <string name="discover_projects">Discover Projects</string>
+    <string name="search_projects_hint">Search projects by name...</string>
+    <string name="request_to_join">Request to Join</string>
+    <string name="request_sent">Request Sent</string>
+    <string name="already_member">Already Member</string>
+    <string name="no_public_projects_available">No public projects available</string>
+    <string name="search_no_results">No projects found matching your search</string>
+    <string name="request_sent_successfully">Join request sent successfully!</string>
+    <string name="request_failed">Failed to send join request. Please try again.</string>
+    <string name="nav_find_projects">Find Projects</string>
+
 </resources>

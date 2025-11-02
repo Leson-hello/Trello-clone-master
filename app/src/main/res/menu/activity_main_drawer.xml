@@ -8,6 +8,10 @@
             android:title="@string/nav_my_profile"
             />
         <item
+            android:id="@+id/nav_find_projects"
+            android:icon="@drawable/ic_action_navigation_menu"
+            android:title="@string/nav_find_projects" />
+        <item
             android:id="@+id/nav_sign_out"
             android:icon="@drawable/ic_nav_sign_out"
             android:title="@string/nav_sign_out"
