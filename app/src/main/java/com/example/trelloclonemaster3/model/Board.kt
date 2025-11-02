@@ -2,6 +2,7 @@ package com.example.trelloclonemaster3.model
 
 import android.os.Parcel
 import android.os.Parcelable
+import com.google.firebase.firestore.PropertyName
 
 data class Board(
     val name: String? = "",
@@ -10,6 +11,8 @@ data class Board(
     val assignedTo: HashMap<String, String> = HashMap(),
     var documentId: String? = "",
     var taskList: ArrayList<Tasks> = ArrayList(),
+
+    @get:PropertyName("isPublic") // Add this annotation
     val isPublic: Boolean = false
 ) : Parcelable {
     constructor(parcel: Parcel) : this(
