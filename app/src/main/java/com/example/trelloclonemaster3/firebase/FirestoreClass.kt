@@ -376,6 +376,68 @@ class FirestoreClass {
             }
     }
 
+    fun getAssignedTasks(activity: MyTasksActivity) {
+        val currentUserId = getCurrentUserID()
+        Log.d("Assigned Tasks", "Fetching tasks for user: $currentUserId")
+
+        // Get all boards where the current user is assigned
+        mFireStore.collection(Constants.BOARDS)
+            .whereGreaterThan("assignedTo.$currentUserId", "")
+            .get()
+            .addOnSuccessListener { documents ->
+                Log.d("Assigned Tasks", "Found ${documents.size()} boards")
+
+                val assignedTasks = ArrayList<com.example.trelloclonemaster3.model.AssignedTask>()
+
+                for (document in documents) {
+                    try {
+                        val board = document.toObject(Board::class.java)!!
+                        board.documentId = document.id
+
+                        // Extract tasks from this board where current user is assigned
+                        for (taskList in board.taskList) {
+                            for (card in taskList.cards) {
+                                // Check if current user is assigned to this card
+                                if (card.assignedTo.contains(currentUserId)) {
+                                    val assignedTask =
+                                        com.example.trelloclonemaster3.model.AssignedTask(
+                                            taskId = generateTaskId(
+                                                board.documentId!!,
+                                                taskList.title!!,
+                                                card.name
+                                            ),
+                                            taskName = card.name,
+                                            projectName = board.name ?: "Unknown Project",
+                                            projectId = board.documentId!!,
+                                            taskListName = taskList.title ?: "Unknown List",
+                                            status = card.status,
+                                            dueDate = card.dueDate,
+                                            labelColor = card.labelColor,
+                                            assignedMembers = card.assignedTo,
+                                            createdBy = card.createdBy
+                                        )
+                                    assignedTasks.add(assignedTask)
+                                }
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Log.e("Assigned Tasks", "Error parsing board: ${document.id}", e)
+                    }
+                }
+
+                Log.d("Assigned Tasks", "Found ${assignedTasks.size} assigned tasks")
+                activity.populateTasksList(assignedTasks)
+            }
+            .addOnFailureListener { e ->
+                Log.e("Assigned Tasks", "Error fetching assigned tasks", e)
+                activity.onTasksLoadFailed()
+            }
+    }
+
+    private fun generateTaskId(boardId: String, taskListTitle: String, cardName: String): String {
+        return "${boardId}_${taskListTitle.hashCode()}_${cardName.hashCode()}"
+    }
+
     fun requestToJoinProject(activity: FindProjectsActivity, board: Board, position: Int) {
         val currentUserId = getCurrentUserID()
 

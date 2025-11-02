@@ -99,6 +99,9 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
             R.id.nav_my_profile -> {
                 startActivityForResult(Intent(this,MyProfileActivity::class.java), MY_PROFILE_REQUEST_CODE)
             }
+            R.id.nav_my_tasks -> {
+                startActivity(Intent(this, MyTasksActivity::class.java))
+            }
             R.id.nav_find_projects -> {
                 startActivity(Intent(this, FindProjectsActivity::class.java))
             }
