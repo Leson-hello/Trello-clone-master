@@ -134,7 +134,7 @@ open class TaskListItemAdapter(private val context: Context, private var list: A
             holder.itemView.findViewById<RecyclerView>(R.id.rv_card_list).layoutManager = LinearLayoutManager(context)
             holder.itemView.findViewById<RecyclerView>(R.id.rv_card_list).setHasFixedSize(true)
 
-            val adapter = CardListItemAdapter(context,model.cards)
+            val adapter = CardListItemAdapter(context, model.cards, holder.adapterPosition)
             holder.itemView.findViewById<RecyclerView>(R.id.rv_card_list).adapter = adapter
 
             // 4. Xem chi tiết Card
@@ -151,50 +151,16 @@ open class TaskListItemAdapter(private val context: Context, private var list: A
             val dividerItemDecoration = DividerItemDecoration(context,DividerItemDecoration.VERTICAL)
             holder.itemView.findViewById<RecyclerView>(R.id.rv_card_list).addItemDecoration(dividerItemDecoration)
 
-            val helper = ItemTouchHelper(
-                object : ItemTouchHelper.SimpleCallback(
-                    ItemTouchHelper.UP or ItemTouchHelper.DOWN,0
-                ){
-                    override fun onMove(recyclerView: RecyclerView, dragged: RecyclerView.ViewHolder, target: RecyclerView.ViewHolder): Boolean {
-                        val draggedPosition = dragged.adapterPosition
-                        val targetPosition = target.adapterPosition
-
-                        if (mPositionDraggedFrom == -1) {
-                            mPositionDraggedFrom = draggedPosition
-                        }
-                        mPositionDraggedTo = targetPosition
-
-                        // 5. Thao tác Collections.swap: Cần dùng vị trí hiện tại
-                        Collections.swap(list[holder.getAdapterPosition()].cards, draggedPosition, targetPosition) // Đã sửa
-
-                        adapter.notifyItemMoved(draggedPosition, targetPosition)
-                        return false
-                    }
-
-                    override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
-                        TODO("Not yet implemented")
-                    }
-
-                    override fun clearView(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder) {
-                        super.clearView(recyclerView, viewHolder)
-                        if (mPositionDraggedFrom != -1 && mPositionDraggedTo != -1 && mPositionDraggedFrom != mPositionDraggedTo) {
-
-                            // 6. Cập nhật Cards sau khi kéo thả (Vị trí List)
-                            (context as TaskListActivity).updateCardsInTaskList(
-                                holder.getAdapterPosition(), // Đã sửa
-                                // 7. Cập nhật Cards sau khi kéo thả (Vị trí List)
-                                list[holder.getAdapterPosition()].cards // Đã sửa
-                            )
-                        }
-
-                        // Reset the global variables
-                        mPositionDraggedFrom = -1
-                        mPositionDraggedTo = -1
-                    }
-
-                }
+            // Sử dụng SimpleItemTouchHelper cho kéo thả
+            // Thay từ SimpleItemTouchHelper thành CrossColumnItemTouchHelper
+            //Quan trọng
+            val itemTouchHelper = ItemTouchHelper(
+                com.example.trelloclonemaster3.utils.CrossColumnItemTouchHelper(
+                    context as TaskListActivity,
+                    holder.adapterPosition
+                )
             )
-            helper.attachToRecyclerView(holder.itemView.findViewById<RecyclerView>(R.id.rv_card_list))
+            itemTouchHelper.attachToRecyclerView(holder.itemView.findViewById<RecyclerView>(R.id.rv_card_list))
         }
     }
 

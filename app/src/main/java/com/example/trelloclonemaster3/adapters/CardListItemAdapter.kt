@@ -13,9 +13,14 @@ import com.example.trelloclonemaster3.activities.TaskListActivity
 import com.example.trelloclonemaster3.model.Card
 import com.example.trelloclonemaster3.model.SelectedMembers
 import com.example.trelloclonemaster3.model.TaskStatus
+import android.app.AlertDialog
+import android.widget.ArrayAdapter
 
-open class CardListItemAdapter(private val context: Context, private var list: ArrayList<Card>):
-        RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+open class CardListItemAdapter(
+    private val context: Context,
+    private var list: ArrayList<Card>,
+    private val taskListPosition: Int = -1
+) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     private var onClickListener: OnClickListener? = null
 
@@ -103,6 +108,9 @@ open class CardListItemAdapter(private val context: Context, private var list: A
                 onClickListener!!.onClick(holder.bindingAdapterPosition)
             }
         }
+
+        // Tạm thời bỏ long-press để tránh conflict với drag-drop
+        // holder.itemView.setOnLongClickListener { ... }
     }
 
     override fun getItemCount(): Int {
@@ -119,4 +127,49 @@ open class CardListItemAdapter(private val context: Context, private var list: A
     }
 
     class MyViewHolder(view: View) : RecyclerView.ViewHolder(view)
+
+    // Helper function to show move card dialog (context menu)
+    private fun showMoveCardDialog(
+        activity: TaskListActivity,
+        card: Card,
+        cardPosition: Int,
+        fromTaskListPosition: Int
+    ) {
+        // Lấy tất cả task lists trừ "Add List" và thêm "(Hiện tại)" vào cột hiện tại
+        val allTaskLists = activity.mBoardDetails.taskList.filter { it.title != "Add List" }
+        val columnNames = allTaskLists.mapIndexed { index, tasks ->
+            if (index == fromTaskListPosition) {
+                "${tasks.title} (Hiện tại)"
+            } else {
+                tasks.title ?: "Cột ${index + 1}"
+            }
+        }
+
+        // Loại trường hợp chỉ có 1 cột hoặc không có cột nào
+        if (columnNames.size <= 1) {
+            android.widget.Toast.makeText(
+                activity,
+                "Không có cột khác để di chuyển",
+                android.widget.Toast.LENGTH_SHORT
+            ).show()
+            return
+        }
+
+        val builder = AlertDialog.Builder(activity)
+        builder.setTitle("Di chuyển '${card.name}' đến:")
+
+        val adapter = ArrayAdapter(activity, android.R.layout.simple_list_item_1, columnNames)
+        builder.setAdapter(adapter) { _, which ->
+            if (which != fromTaskListPosition) { // Chỉ xử lý di chuyển nếu chọn khác cột hiện tại
+                activity.moveCardToColumn(fromTaskListPosition, cardPosition, which)
+                android.widget.Toast.makeText(
+                    activity,
+                    "Đã di chuyển '${card.name}' thành công!",
+                    android.widget.Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+        builder.setNegativeButton("Hủy", null)
+        builder.show()
+    }
 }

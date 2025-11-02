@@ -21,7 +21,7 @@ import com.example.trelloclonemaster3.utils.Constants
 @Suppress("DEPRECATION")
 class TaskListActivity : BaseActivity() {
 
-    private lateinit var mBoardDetails : Board
+    internal lateinit var mBoardDetails: Board
     private lateinit var mDocumentId: String
 
     lateinit var mMembersDetailList: ArrayList<User>
@@ -186,5 +186,170 @@ class TaskListActivity : BaseActivity() {
 
         showCustomProgressBar()
         FirestoreClass().addUpdateTaskList(this,mBoardDetails)
+    }
+
+    // New method for moving cards between task lists
+    fun moveCardBetweenLists(
+        fromListPosition: Int,
+        toListPosition: Int, 
+        cardPosition: Int,
+        targetPosition: Int
+    ) {
+        val card = mBoardDetails.taskList[fromListPosition].cards.removeAt(cardPosition)
+        
+        // Update card status based on target column
+        val updatedCard = updateCardStatusBasedOnColumn(card, toListPosition)
+        
+        mBoardDetails.taskList[toListPosition].cards.add(targetPosition, updatedCard)
+        
+        // Remove the "Add List" item before updating
+        mBoardDetails.taskList.removeAt(mBoardDetails.taskList.size-1)
+        
+        showCustomProgressBar()
+        FirestoreClass().addUpdateTaskList(this, mBoardDetails)
+    }
+    
+    private fun updateCardStatusBasedOnColumn(card: Card, columnPosition: Int): Card {
+        val taskListTitle = mBoardDetails.taskList[columnPosition].title?.lowercase() ?: ""
+        
+        val newStatus = when {
+            taskListTitle.contains("pending") || taskListTitle.contains("to do") || taskListTitle.contains("cần làm") -> TaskStatus.PENDING
+            taskListTitle.contains("progress") || taskListTitle.contains("đang tiến hành") || taskListTitle.contains("doing") -> TaskStatus.IN_PROGRESS
+            taskListTitle.contains("completed") || taskListTitle.contains("done") || taskListTitle.contains("hoàn thành") -> TaskStatus.COMPLETED
+            taskListTitle.contains("review") || taskListTitle.contains("đang xem xét") -> TaskStatus.IN_PROGRESS // Treat review as in progress
+            else -> card.status // Keep original status if column doesn't match known patterns
+        }
+        
+        return Card(
+            name = card.name,
+            createdBy = card.createdBy,
+            assignedTo = card.assignedTo,
+            labelColor = card.labelColor,
+            dueDate = card.dueDate,
+            status = newStatus
+        )
+    }
+
+    // Method for context menu based card movement
+    fun moveCardToColumn(fromListPosition: Int, cardPosition: Int, toListPosition: Int) {
+        try {
+            if (fromListPosition == toListPosition) {
+                Log.d("TaskListActivity", "Same column, no move needed")
+                return
+            }
+
+            // Kiểm tra vị trí hợp lệ
+            if (fromListPosition < 0 || fromListPosition >= mBoardDetails.taskList.size - 1 ||
+                toListPosition < 0 || toListPosition >= mBoardDetails.taskList.size - 1 ||
+                cardPosition < 0 || cardPosition >= mBoardDetails.taskList[fromListPosition].cards.size
+            ) {
+                Log.e(
+                    "TaskListActivity",
+                    "Invalid positions: from=$fromListPosition, to=$toListPosition, card=$cardPosition"
+                )
+                return
+            }
+
+            Log.d(
+                "TaskListActivity",
+                "Moving card from column $fromListPosition to $toListPosition"
+            )
+
+            // Lấy card từ cột nguồn
+            val card = mBoardDetails.taskList[fromListPosition].cards.removeAt(cardPosition)
+
+            // Cập nhật status dựa trên cột đích
+            val updatedCard = updateCardStatusBasedOnColumn(card, toListPosition)
+
+            // Thêm card vào cột đích (ở cuối danh sách)
+            mBoardDetails.taskList[toListPosition].cards.add(updatedCard)
+
+            // Loại bỏ item "Add List" trước khi cập nhật
+            mBoardDetails.taskList.removeAt(mBoardDetails.taskList.size - 1)
+
+            Log.d("TaskListActivity", "Card moved successfully, updating Firestore...")
+            showCustomProgressBar()
+            FirestoreClass().addUpdateTaskList(this, mBoardDetails)
+
+        } catch (e: Exception) {
+            Log.e("TaskListActivity", "Error moving card: ${e.message}", e)
+            hideCustomProgressDialog()
+        }
+    }
+
+    // Method for drag and drop between columns
+    fun moveCardBetweenColumns(
+        fromColumn: Int,
+        toColumn: Int,
+        cardPosition: Int,
+        targetPosition: Int
+    ) {
+        try {
+            Log.d("TaskListActivity", "=== MOVE CARD BETWEEN COLUMNS ===")
+            Log.d(
+                "TaskListActivity",
+                "From: $fromColumn, To: $toColumn, CardPos: $cardPosition, TargetPos: $targetPosition"
+            )
+
+            if (fromColumn == toColumn) {
+                Log.d("TaskListActivity", "Same column drag, no cross-column move needed")
+                return
+            }
+
+            // Kiểm tra vị trí hợp lệ
+            if (fromColumn < 0 || fromColumn >= mBoardDetails.taskList.size - 1 ||
+                toColumn < 0 || toColumn >= mBoardDetails.taskList.size - 1 ||
+                cardPosition < 0 || cardPosition >= mBoardDetails.taskList[fromColumn].cards.size
+            ) {
+                Log.e(
+                    "TaskListActivity",
+                    "Invalid drag positions: from=$fromColumn, to=$toColumn, card=$cardPosition"
+                )
+                Log.e("TaskListActivity", "Available columns: ${mBoardDetails.taskList.size - 1}")
+                Log.e(
+                    "TaskListActivity",
+                    "Cards in source column: ${mBoardDetails.taskList[fromColumn].cards.size}"
+                )
+                return
+            }
+
+            // Lấy card từ cột nguồn
+            val card = mBoardDetails.taskList[fromColumn].cards.removeAt(cardPosition)
+            Log.d(
+                "TaskListActivity",
+                "Moved card: '${card.name}' from column '${mBoardDetails.taskList[fromColumn].title}'"
+            )
+
+            // Cập nhật status dựa trên cột đích
+            val updatedCard = updateCardStatusBasedOnColumn(card, toColumn)
+            Log.d(
+                "TaskListActivity",
+                "Updated card status to: ${updatedCard.status} for column '${mBoardDetails.taskList[toColumn].title}'"
+            )
+
+            // Thêm card vào cột đích tại vị trí chỉ định
+            val safeTargetPosition =
+                if (targetPosition > mBoardDetails.taskList[toColumn].cards.size) {
+                    mBoardDetails.taskList[toColumn].cards.size
+                } else {
+                    targetPosition
+                }
+            mBoardDetails.taskList[toColumn].cards.add(safeTargetPosition, updatedCard)
+            Log.d(
+                "TaskListActivity",
+                "Added card to column '${mBoardDetails.taskList[toColumn].title}' at position $safeTargetPosition"
+            )
+
+            // Loại bỏ item "Add List" trước khi cập nhật
+            mBoardDetails.taskList.removeAt(mBoardDetails.taskList.size - 1)
+
+            Log.d("TaskListActivity", "Card drag moved successfully, updating Firestore...")
+            showCustomProgressBar()
+            FirestoreClass().addUpdateTaskList(this, mBoardDetails)
+
+        } catch (e: Exception) {
+            Log.e("TaskListActivity", "Error drag moving card: ${e.message}", e)
+            hideCustomProgressDialog()
+        }
     }
 }
