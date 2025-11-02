@@ -188,6 +188,24 @@ class TaskListActivity : BaseActivity() {
         FirestoreClass().addUpdateTaskList(this,mBoardDetails)
     }
 
+    // Debug method to log current board state
+    fun logBoardState(context: String) {
+        Log.d("BoardState", "=== BOARD STATE ($context) ===")
+        Log.d("BoardState", "Total task lists: ${mBoardDetails.taskList.size}")
+        mBoardDetails.taskList.forEachIndexed { index, taskList ->
+            if (index < mBoardDetails.taskList.size - 1) { // Skip "Add List"
+                Log.d(
+                    "BoardState",
+                    "Column $index: '${taskList.title}' has ${taskList.cards.size} cards"
+                )
+                taskList.cards.forEachIndexed { cardIndex, card ->
+                    Log.d("BoardState", "  Card $cardIndex: '${card.name}' (${card.status})")
+                }
+            }
+        }
+        Log.d("BoardState", "=== END BOARD STATE ===")
+    }
+
     // New method for moving cards between task lists
     fun moveCardBetweenLists(
         fromListPosition: Int,
@@ -291,6 +309,9 @@ class TaskListActivity : BaseActivity() {
                 "From: $fromColumn, To: $toColumn, CardPos: $cardPosition, TargetPos: $targetPosition"
             )
 
+            // Log board state before move
+            logBoardState("BEFORE MOVE")
+
             if (fromColumn == toColumn) {
                 Log.d("TaskListActivity", "Same column drag, no cross-column move needed")
                 return
@@ -310,6 +331,7 @@ class TaskListActivity : BaseActivity() {
                     "TaskListActivity",
                     "Cards in source column: ${mBoardDetails.taskList[fromColumn].cards.size}"
                 )
+                logBoardState("INVALID POSITIONS")
                 return
             }
 
@@ -340,6 +362,9 @@ class TaskListActivity : BaseActivity() {
                 "Added card to column '${mBoardDetails.taskList[toColumn].title}' at position $safeTargetPosition"
             )
 
+            // Log board state after move
+            logBoardState("AFTER MOVE")
+
             // Loại bỏ item "Add List" trước khi cập nhật
             mBoardDetails.taskList.removeAt(mBoardDetails.taskList.size - 1)
 
@@ -350,6 +375,7 @@ class TaskListActivity : BaseActivity() {
         } catch (e: Exception) {
             Log.e("TaskListActivity", "Error drag moving card: ${e.message}", e)
             hideCustomProgressDialog()
+            logBoardState("ERROR STATE")
         }
     }
 }
