@@ -15,12 +15,14 @@ import com.example.trelloclonemaster3.network.ApiClient
 import com.example.trelloclonemaster3.network.ApiInterface
 import com.example.trelloclonemaster3.utils.Constants
 import com.example.trelloclonemaster3.utils.FCMConstants
+import com.example.trelloclonemaster3.firebase.FCMv1ApiService
 import com.google.android.gms.tasks.Task
 import com.google.android.gms.tasks.Tasks
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.QuerySnapshot
 import com.google.firebase.firestore.SetOptions
+import kotlinx.coroutines.launch
 import okhttp3.ResponseBody
 import retrofit2.Call
 import retrofit2.Callback
@@ -449,21 +451,29 @@ class FirestoreClass {
     fun requestToJoinProject(activity: FindProjectsActivity, board: Board, position: Int) {
         val currentUserId = getCurrentUserID()
 
+        Log.d("JOIN_REQUEST_DEBUG", "=== JOIN PROJECT REQUEST DEBUG START ===")
+        Log.d("JOIN_REQUEST_DEBUG", "Current User ID: $currentUserId")
+        Log.d("JOIN_REQUEST_DEBUG", "Board Name: ${board.name}")
+        Log.d("JOIN_REQUEST_DEBUG", "Board ID: ${board.documentId}")
+        Log.d("JOIN_REQUEST_DEBUG", "Board Created By: ${board.createdBy}")
+
         // Add current user to the board's assignedTo with "Pending" status
         val assignedToHashMap = HashMap<String, Any>()
         assignedToHashMap["${Constants.ASSIGNED_TO}.$currentUserId"] = Constants.PENDING
 
+        Log.d("JOIN_REQUEST_DEBUG", "Updating board with pending status...")
         mFireStore.collection(Constants.BOARDS)
             .document(board.documentId!!)
             .update(assignedToHashMap)
             .addOnSuccessListener {
-                Log.e(
-                    "Join Request",
-                    "Join request sent successfully for user: $currentUserId to board: ${board.name}"
+                Log.d(
+                    "JOIN_REQUEST_DEBUG",
+                    "✅ Join request sent successfully for user: $currentUserId to board: ${board.name}"
                 )
                 activity.onJoinRequestSuccess(position)
 
                 // FIXED: Send notification to project manager about join request
+                Log.d("JOIN_REQUEST_DEBUG", "📧 Sending notification to project manager...")
                 sendJoinRequestNotificationToManager(
                     activity,
                     board.createdBy!!,
@@ -473,7 +483,8 @@ class FirestoreClass {
                 )
             }
             .addOnFailureListener { e ->
-                Log.e("Join Request", "Error sending join request", e)
+                Log.e("JOIN_REQUEST_DEBUG", "❌ Error sending join request", e)
+                Log.e("JOIN_REQUEST_DEBUG", "=== JOIN PROJECT REQUEST DEBUG END (ERROR) ===")
                 activity.onJoinRequestFailure()
             }
     }
@@ -486,81 +497,38 @@ class FirestoreClass {
         requestingUserId: String,
         boardId: String
     ) {
+        Log.d("JOIN_REQUEST_DEBUG", "=== SENDING NOTIFICATION TO MANAGER DEBUG START ===")
+        Log.d("JOIN_REQUEST_DEBUG", "Manager ID: $managerId")
+        Log.d("JOIN_REQUEST_DEBUG", "Requesting User ID: $requestingUserId")
+
         // Get requesting user details first
+        Log.d("JOIN_REQUEST_DEBUG", "Getting requesting user details...")
         mFireStore.collection(Constants.USERS).document(requestingUserId).get()
             .addOnSuccessListener { requestingUserDoc ->
+                Log.d("JOIN_REQUEST_DEBUG", "✅ Successfully got requesting user document")
+
                 val requestingUser = requestingUserDoc.toObject(User::class.java)!!
                 val requestingUserName = requestingUser.name ?: "Unknown User"
 
-                // Get manager details to send notification
-                mFireStore.collection(Constants.USERS).document(managerId).get()
-                    .addOnSuccessListener { managerDoc ->
-                        val manager = managerDoc.toObject(User::class.java)!!
+                Log.d("JOIN_REQUEST_DEBUG", "Requesting User Name: $requestingUserName")
 
-                        // FIXED: Always store notification in Firestore as fallback
-                        storeInAppNotification(
-                            managerId,
-                            "New Join Request",
-                            "$requestingUserName wants to join your project '$boardName'",
-                            boardId,
-                            "join_request"
-                        )
-
-                        if (manager.fcmToken?.isNotEmpty() == true &&
-                            FCMConstants.SERVER_KEY.startsWith("AAAA") &&
-                            !FCMConstants.SERVER_KEY.contains("YOUR_ACTUAL_SERVER_KEY")
-                        ) {
-                            // Send push notification to manager only if FCM is properly configured
-                            val title = "New Join Request"
-                            val message = "$requestingUserName wants to join your project '$boardName'"
-
-                            val data = NotificationData(title, message)
-                            val pushNotification = PushNotification(data, manager.fcmToken!!)
-
-                            val service = ApiClient.getClient(FCMConstants.BASE_URL).create(ApiInterface::class.java)
-
-                            service.sendNotification(pushNotification)
-                                .enqueue(object : Callback<ResponseBody> {
-                                    override fun onResponse(
-                                        call: Call<ResponseBody>,
-                                        response: Response<ResponseBody>
-                                    ) {
-                                    if (response.isSuccessful) {
-                                        Log.d("FCM", "Join request notification sent successfully to manager: ${manager.name}")
-                                    } else {
-                                        Log.e("FCM Error", "Failed to send join request notification: ${response.code()}")
-                                        Log.d(
-                                            "Notification",
-                                            "Fallback: Notification stored in Firestore for manager: ${manager.name}"
-                                        )
-                                    }
-                                }
-
-                                override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
-                                    Log.e("FCM Error", "Network error sending join request notification", t)
-                                    Log.d(
-                                        "Notification",
-                                        "Fallback: Notification stored in Firestore for manager: ${manager.name}"
-                                    )
-                                }
-                            })
-                        } else {
-                            Log.w(
-                                "Notification",
-                                "FCM not configured or manager has no FCM token. Using in-app notification only."
-                            )
-                            Log.d(
-                                "Notification",
-                                "In-app notification stored for manager: ${manager.name}"
-                            )
-                        }
-                    }
-                    .addOnFailureListener { e ->
-                        Log.e("Manager Details", "Error getting manager details for notification", e)
-                    }
+                // Use new FCM v1 API method
+                Log.d("JOIN_REQUEST_DEBUG", "Calling sendJoinRequestNotificationV1...")
+                sendJoinRequestNotificationV1(
+                    activity,
+                    managerId,
+                    boardName,
+                    requestingUserName,
+                    boardId
+                )
+                Log.d("JOIN_REQUEST_DEBUG", "=== SENDING NOTIFICATION TO MANAGER DEBUG END ===")
             }
             .addOnFailureListener { e ->
-                Log.e("User Details", "Error getting requesting user details", e)
+                Log.e("JOIN_REQUEST_DEBUG", "❌ Error getting requesting user details", e)
+                Log.e(
+                    "JOIN_REQUEST_DEBUG",
+                    "=== SENDING NOTIFICATION TO MANAGER DEBUG END (ERROR) ==="
+                )
             }
     }
 
@@ -626,10 +594,284 @@ class FirestoreClass {
                 Log.e("Notification", "Failed to mark notification as read", e)
             }
     }
-  
 
+    // NEW: Update user FCM token
+    fun updateUserFCMToken(userId: String, fcmToken: String) {
+        val userHashMap = HashMap<String, Any>()
+        userHashMap["fcmToken"] = fcmToken
 
+        mFireStore.collection(Constants.USERS).document(userId).update(userHashMap)
+            .addOnSuccessListener {
+                Log.d("FCM Token", "FCM token updated successfully for user: $userId")
+            }
+            .addOnFailureListener { e ->
+                Log.e("FCM Token", "Failed to update FCM token for user: $userId", e)
+            }
+    }
 
+    // NEW: Send notification using FCM v1 API for join request acceptance/rejection
+    fun sendJoinResponseNotificationV1(
+        activity: MembersActivity,
+        userId: String,
+        boardName: String,
+        managerName: String,
+        isApproved: Boolean
+    ) {
+        var title = ""
+        var message = ""
+        var notificationType = ""
+        if (isApproved) {
+            title = "Join Request Approved"
+            message = "Congratulations! $managerName approved your request to join '$boardName'"
+            notificationType = "join_accepted"
+        } else {
+            title = "Join Request Rejected"
+            message = "$managerName rejected your request to join '$boardName'"
+            notificationType = "join_rejected"
+        }
 
+        mFireStore.collection(Constants.USERS).document(userId).get()
+            .addOnSuccessListener { document ->
+                val user = document.toObject(User::class.java)!!
+
+                if (user.fcmToken?.isNotEmpty() == true) {
+                    kotlinx.coroutines.GlobalScope.launch {
+                        val fcmService = FCMv1ApiService(activity)
+                        val success = fcmService.sendDataMessage(
+                            user.fcmToken!!,
+                            title,
+                            message,
+                            mapOf(
+                                "boardName" to boardName,
+                                "managerName" to managerName
+                            ),
+                            notificationType
+                        )
+
+                        if (success) {
+                            Log.d("FCM v1", "Join response notification sent successfully")
+                        } else {
+                            Log.e("FCM v1", "Failed to send join response notification")
+                        }
+                    }
+                }
+
+                // Always store in-app notification as fallback
+                storeInAppNotification(userId, title, message, null, notificationType)
+            }
+            .addOnFailureListener { e ->
+                Log.e("Join Response", "Error getting user details for notification", e)
+            }
+    }
+
+    // NEW: Send task assignment notification using FCM v1
+    fun sendTaskAssignmentNotification(
+        context: android.content.Context,
+        assignedUserIds: List<String>,
+        taskName: String,
+        boardName: String,
+        assignedBy: String
+    ) {
+        val title = "New Task Assigned"
+        val message = "$assignedBy assigned you a task: '$taskName' in project '$boardName'"
+        val data = mapOf(
+            "taskName" to taskName,
+            "boardName" to boardName,
+            "assignedBy" to assignedBy
+        )
+
+        for (userId in assignedUserIds) {
+            mFireStore.collection(Constants.USERS).document(userId).get()
+                .addOnSuccessListener { document ->
+                    val user = document.toObject(User::class.java)!!
+
+                    if (user.fcmToken?.isNotEmpty() == true) {
+                        kotlinx.coroutines.GlobalScope.launch {
+                            val fcmService = FCMv1ApiService(context)
+                            fcmService.sendDataMessage(
+                                user.fcmToken!!,
+                                title,
+                                message,
+                                data,
+                                "task_assigned"
+                            )
+                        }
+                    }
+
+                    // Store in-app notification
+                    storeInAppNotification(userId, title, message, null, "task_assigned")
+                }
+        }
+    }
+
+    // NEW: Send due date reminder notification
+    fun sendDueDateReminderNotification(
+        context: android.content.Context,
+        assignedUserIds: List<String>,
+        taskName: String,
+        boardName: String,
+        dueDate: Long
+    ) {
+        val currentTime = System.currentTimeMillis()
+        val isOverdue = dueDate < currentTime
+
+        val title = if (isOverdue) "Task Overdue" else "Task Due Soon"
+        val message = if (isOverdue) {
+            "Task '$taskName' in '$boardName' is now overdue!"
+        } else {
+            "Task '$taskName' in '$boardName' is due soon"
+        }
+
+        val data = mapOf(
+            "taskName" to taskName,
+            "boardName" to boardName,
+            "dueDate" to dueDate.toString(),
+            "isOverdue" to isOverdue.toString()
+        )
+
+        for (userId in assignedUserIds) {
+            mFireStore.collection(Constants.USERS).document(userId).get()
+                .addOnSuccessListener { document ->
+                    val user = document.toObject(User::class.java)!!
+
+                    if (user.fcmToken?.isNotEmpty() == true) {
+                        kotlinx.coroutines.GlobalScope.launch {
+                            val fcmService = FCMv1ApiService(context)
+                            fcmService.sendDataMessage(
+                                user.fcmToken!!,
+                                title,
+                                message,
+                                data,
+                                "task_due"
+                            )
+                        }
+                    }
+
+                    // Store in-app notification
+                    storeInAppNotification(userId, title, message, null, "task_due")
+                }
+        }
+    }
+
+    // NEW: Send task completion notification
+    fun sendTaskCompletionNotification(
+        context: android.content.Context,
+        boardMemberIds: List<String>,
+        taskName: String,
+        boardName: String,
+        completedBy: String
+    ) {
+        val title = "Task Completed"
+        val message = "$completedBy completed task '$taskName' in project '$boardName'"
+        val data = mapOf(
+            "taskName" to taskName,
+            "boardName" to boardName,
+            "completedBy" to completedBy
+        )
+
+        for (userId in boardMemberIds) {
+            // Don't send notification to the person who completed the task
+            if (userId != getCurrentUserID()) {
+                mFireStore.collection(Constants.USERS).document(userId).get()
+                    .addOnSuccessListener { document ->
+                        val user = document.toObject(User::class.java)!!
+
+                        if (user.fcmToken?.isNotEmpty() == true) {
+                            kotlinx.coroutines.GlobalScope.launch {
+                                val fcmService = FCMv1ApiService(context)
+                                fcmService.sendDataMessage(
+                                    user.fcmToken!!,
+                                    title,
+                                    message,
+                                    data,
+                                    "task_completed"
+                                )
+                            }
+                        }
+
+                        // Store in-app notification
+                        storeInAppNotification(userId, title, message, null, "task_completed")
+                    }
+            }
+        }
+    }
+
+    // NEW: Enhanced join request notification using FCM v1
+    fun sendJoinRequestNotificationV1(
+        context: android.content.Context,
+        managerId: String,
+        boardName: String,
+        requestingUserName: String,
+        boardId: String
+    ) {
+        Log.d("FCM_DEBUG", "=== JOIN REQUEST NOTIFICATION DEBUG START ===")
+        Log.d("FCM_DEBUG", "Manager ID: $managerId")
+        Log.d("FCM_DEBUG", "Board Name: $boardName")
+        Log.d("FCM_DEBUG", "Requesting User: $requestingUserName")
+        Log.d("FCM_DEBUG", "Board ID: $boardId")
+
+        mFireStore.collection(Constants.USERS).document(managerId).get()
+            .addOnSuccessListener { document ->
+                Log.d("FCM_DEBUG", "✅ Successfully got manager document")
+
+                val manager = document.toObject(User::class.java)!!
+                Log.d("FCM_DEBUG", "Manager name: ${manager.name}")
+                Log.d("FCM_DEBUG", "Manager FCM token: ${manager.fcmToken?.take(20) ?: "NULL"}...")
+
+                val title = "New Join Request"
+                val message = "$requestingUserName wants to join your project '$boardName'"
+                val data = mapOf(
+                    "boardId" to boardId,
+                    "boardName" to boardName,
+                    "requestingUserName" to requestingUserName
+                )
+
+                Log.d("FCM_DEBUG", "Notification title: $title")
+                Log.d("FCM_DEBUG", "Notification message: $message")
+                Log.d("FCM_DEBUG", "Notification data: $data")
+
+                if (manager.fcmToken?.isNotEmpty() == true) {
+                    Log.d("FCM_DEBUG", "✅ Manager has FCM token, sending notification...")
+
+                    kotlinx.coroutines.GlobalScope.launch {
+                        try {
+                            val fcmService = FCMv1ApiService(context)
+                            val success = fcmService.sendDataMessage(
+                                manager.fcmToken!!,
+                                title,
+                                message,
+                                data,
+                                "join_request"
+                            )
+
+                            if (success) {
+                                Log.d(
+                                    "FCM_DEBUG",
+                                    "✅ Join request notification sent successfully via FCM"
+                                )
+                            } else {
+                                Log.e(
+                                    "FCM_DEBUG",
+                                    "❌ Failed to send join request notification via FCM"
+                                )
+                            }
+                        } catch (e: Exception) {
+                            Log.e("FCM_DEBUG", "❌ Exception while sending FCM notification", e)
+                        }
+                    }
+                } else {
+                    Log.w("FCM_DEBUG", "⚠️ Manager FCM token is empty or null")
+                }
+
+                // Always store in-app notification
+                Log.d("FCM_DEBUG", "📱 Storing in-app notification...")
+                storeInAppNotification(managerId, title, message, boardId, "join_request")
+                Log.d("FCM_DEBUG", "=== JOIN REQUEST NOTIFICATION DEBUG END ===")
+            }
+            .addOnFailureListener { e ->
+                Log.e("FCM_DEBUG", "❌ Error getting manager details", e)
+                Log.e("FCM_DEBUG", "=== JOIN REQUEST NOTIFICATION DEBUG END (ERROR) ===")
+            }
+    }
 
 }

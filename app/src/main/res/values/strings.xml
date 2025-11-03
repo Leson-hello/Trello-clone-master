@@ -76,4 +76,12 @@
     <string name="request_failed">Failed to send join request. Please try again.</string>
     <string name="nav_find_projects">Find Projects</string>
 
+    <!-- Notification strings -->
+    <string name="notification_icon">Notification Icon</string>
+    <string name="notifications">Notifications</string>
+    <string name="nav_notifications">Notifications</string>
+    <string name="no_notifications">No notifications yet</string>
+    <string name="mark_all_read">Mark All Read</string>
+    <string name="clear_all">Clear All</string>
+
 </resources>

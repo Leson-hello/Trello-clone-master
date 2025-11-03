@@ -42,6 +42,20 @@ android {
         // Cần cập nhật jvmTarget lên 17 để khớp với compileOptions
         jvmTarget = '17'
     }
+
+    // Packaging configuration to resolve duplicate META-INF files
+    packaging {
+        resources {
+            excludes += [
+                    'META-INF/DEPENDENCIES',
+                    'META-INF/LICENSE',
+                    'META-INF/LICENSE.txt',
+                    'META-INF/NOTICE',
+                    'META-INF/NOTICE.txt',
+                    'META-INF/ASL2.0'
+            ]
+        }
+    }
 }
 def retrofit_version = "2.9.0"
 def room_version = "2.6.1"
@@ -67,6 +81,7 @@ dependencies {
     implementation 'com.google.firebase:firebase-firestore'
     implementation 'com.google.firebase:firebase-storage'
     implementation 'com.google.firebase:firebase-analytics-ktx'
+    implementation 'com.google.firebase:firebase-messaging-ktx'
 
     // Room Database dependencies
     implementation "androidx.room:room-runtime:$room_version"
@@ -81,6 +96,12 @@ dependencies {
 
     // Gson for JSON serialization in Room
     implementation 'com.google.code.gson:gson:2.10.1'
+
+    // Google Auth Library for FCM v1 OAuth2 authentication
+    implementation 'com.google.auth:google-auth-library-oauth2-http:1.19.0'
+
+    // WorkManager for background tasks
+    implementation "androidx.work:work-runtime-ktx:2.9.0"
 
     // Cập nhật Thư viện bên thứ ba
     implementation 'de.hdodenhof:circleimageview:3.1.0' // Vẫn ổn

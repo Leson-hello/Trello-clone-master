@@ -193,6 +193,12 @@ class CardDetailsActivity : BaseActivity() {
     }
 
     private fun upDateCardDetails(){
+        // Store original card data for comparison
+        val originalCard = mBoardDetails.taskList[mTaskListPosition].cards[mCardListPosition]
+        val originalAssignedTo = ArrayList(originalCard.assignedTo)
+        val originalStatus = originalCard.status
+        val originalDueDate = originalCard.dueDate
+
         val card = Card(
                 findViewById<TextView>(R.id.et_name_card_details).text.toString(),
                 mBoardDetails.taskList[mTaskListPosition].cards[mCardListPosition].createdBy,
@@ -206,6 +212,9 @@ class CardDetailsActivity : BaseActivity() {
         taskList.removeAt(taskList.size-1)
 
         mBoardDetails.taskList[mTaskListPosition].cards[mCardListPosition] = card
+
+        // Check for changes and send notifications
+        checkAndSendNotifications(originalAssignedTo, originalStatus, originalDueDate, card)
 
         showCustomProgressBar()
         FirestoreClass().addUpdateTaskList(this,mBoardDetails)
@@ -409,4 +418,47 @@ class CardDetailsActivity : BaseActivity() {
         )
         dpd.show()
     }
+    private fun checkAndSendNotifications(
+        originalAssignedTo: ArrayList<String>,
+        originalStatus: TaskStatus,
+        originalDueDate: Long,
+        updatedCard: Card
+    ) {
+        // Check for new task assignments
+        val newAssignments = updatedCard.assignedTo.filter { !originalAssignedTo.contains(it) }
+        if (newAssignments.isNotEmpty()) {
+            FirestoreClass().sendTaskAssignmentNotification(
+                this,
+                newAssignments,
+                updatedCard.name,
+                mBoardDetails.name!!,
+                "Current User" // You might want to get actual current user name
+            )
+        }
+
+        // Check if task was just completed
+        if (originalStatus != TaskStatus.COMPLETED && updatedCard.status == TaskStatus.COMPLETED) {
+            // Get all board members
+            val boardMemberIds = mBoardDetails.assignedTo.keys.toList()
+            FirestoreClass().sendTaskCompletionNotification(
+                this,
+                boardMemberIds,
+                updatedCard.name,
+                mBoardDetails.name!!,
+                "Current User" // You might want to get actual current user name
+            )
+        }
+
+        // Check if due date was just set or changed
+        if (originalDueDate != updatedCard.dueDate && updatedCard.dueDate > 0) {
+            FirestoreClass().sendDueDateReminderNotification(
+                this,
+                updatedCard.assignedTo,
+                updatedCard.name,
+                mBoardDetails.name!!,
+                updatedCard.dueDate
+            )
+        }
+    }
+
 }

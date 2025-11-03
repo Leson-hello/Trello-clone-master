@@ -22,6 +22,9 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.navigation.NavigationView
 import com.google.firebase.auth.FirebaseAuth
 import com.example.trelloclonemaster3.R
+import com.example.trelloclonemaster3.utils.NotificationBadgeHelper
+import com.example.trelloclonemaster3.utils.TestNotificationHelper
+import com.example.trelloclonemaster3.utils.NotificationDebugHelper
 
 
 
@@ -34,6 +37,7 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
     }
 
     private lateinit var mUserName: String
+    private lateinit var notificationBadgeHelper: NotificationBadgeHelper
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -46,11 +50,20 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
         val navVIew = findViewById<NavigationView>(R.id.nav_view)
         navVIew.setNavigationItemSelectedListener(this)
 
+        // Setup notification badge helper
+        notificationBadgeHelper = NotificationBadgeHelper(this, navVIew, this)
+
         val floatingActionButton = findViewById<FloatingActionButton>(R.id.fabAddBoard)
         floatingActionButton.setOnClickListener {
             val intent = Intent(this,CreatBoardActivity::class.java)
             intent.putExtra(Constants.NAME,mUserName)
             startActivityForResult(intent, CREAT_BOARD_REQUEST_CODE)
+        }
+
+        // Long click to debug notifications (for testing)
+        floatingActionButton.setOnLongClickListener {
+            NotificationDebugHelper.testCompleteNotificationFlow(this)
+            true
         }
     }
 
@@ -102,6 +115,9 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
             R.id.nav_my_tasks -> {
                 startActivity(Intent(this, MyTasksActivity::class.java))
             }
+            R.id.nav_notifications -> {
+                startActivity(Intent(this, NotificationsActivity::class.java))
+            }
             R.id.nav_find_projects -> {
                 startActivity(Intent(this, FindProjectsActivity::class.java))
             }
@@ -146,6 +162,9 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
         if(readBoardList){
             showCustomProgressBar()
             FirestoreClass().getBoardList(this)
+
+            // Setup notification badge with current user ID
+            notificationBadgeHelper.setupNotificationBadge(FirestoreClass().getCurrentUserID())
         }
     }
 

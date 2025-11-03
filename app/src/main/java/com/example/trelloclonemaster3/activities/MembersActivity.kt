@@ -174,6 +174,15 @@ class MembersActivity : BaseActivity() {
         anyChangesMade = true
         showToast("Member approved successfully!")
 
+        // Use new FCM v1 notification method
+        FirestoreClass().sendJoinResponseNotificationV1(
+            this,
+            user.id!!,
+            mBoardDetails.name!!,
+            mCurrentUserName,
+            true
+        )
+
         mPendingMembersList.remove(user)
         mPendingRequestsAdapter.notifyDataSetChanged()
 
@@ -191,6 +200,15 @@ class MembersActivity : BaseActivity() {
         anyChangesMade = true
         showToast("Member rejected successfully!")
 
+        // Use new FCM v1 notification method
+        FirestoreClass().sendJoinResponseNotificationV1(
+            this,
+            user.id!!,
+            mBoardDetails.name!!,
+            mCurrentUserName,
+            false
+        )
+
         mPendingMembersList.remove(user)
         mPendingRequestsAdapter.notifyDataSetChanged()
 
@@ -201,37 +219,12 @@ class MembersActivity : BaseActivity() {
     }
 
     fun sendNotificationToUser(token: String, boardName: String, managerName: String, isApproved: Boolean) {
-        val title: String
-        val message: String
-
-        if (isApproved) {
-            title = "Your request to join ${boardName} has been approved!"
-            message = "Your request to join the board ${boardName} has been approved by ${managerName}. You are now a member."
-        } else {
-            title = "Your request to join ${boardName} has been rejected."
-            message = "Your request to join the board ${boardName} has been rejected by ${managerName}."
-        }
-
-        val data = NotificationData(title, message)
-        val pushNotification = PushNotification(data, token)
-
-        val service = ApiClient.getClient(FCMConstants.BASE_URL).create(ApiInterface::class.java)
-
-        service.sendNotification(pushNotification).enqueue(object : Callback<ResponseBody> {
-            override fun onResponse(call: Call<ResponseBody>, response: Response<ResponseBody>) {
-                if (response.isSuccessful) {
-                    Log.e("FCM Response", "Notification sent successfully to user.")
-                } else {
-                    Log.e("FCM Error", "Error sending notification: ${response.code()}")
-                    Toast.makeText(this@MembersActivity, "Failed to send notification to user.", Toast.LENGTH_SHORT).show()
-                }
-            }
-
-            override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
-                Log.e("FCM Error", "Network error sending notification", t)
-                Toast.makeText(this@MembersActivity, "Network error sending notification.", Toast.LENGTH_SHORT).show()
-            }
-        })
+        // This method is now deprecated in favor of the new FCM v1 API
+        // The notification sending is now handled directly in FirestoreClass using FCM v1
+        Log.d(
+            "MembersActivity",
+            "Using legacy notification method - this should be replaced by FCM v1"
+        )
     }
 
     fun onGetCurrentUserSuccess(user: User) {

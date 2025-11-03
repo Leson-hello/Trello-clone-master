@@ -152,4 +152,20 @@
     <dimen name="button_padding_horizontal">16dp</dimen>
     <dimen name="item_board_action_button_text_size">16sp</dimen>
 
+    <!-- Notification dimensions -->
+    <dimen name="item_notification_margin">8dp</dimen>
+    <dimen name="card_corner_radius">8dp</dimen>
+    <dimen name="card_elevation">4dp</dimen>
+    <dimen name="item_notification_padding">16dp</dimen>
+    <dimen name="notification_icon_size">40dp</dimen>
+    <dimen name="item_notification_icon_margin_end">12dp</dimen>
+    <dimen name="notification_title_text_size">16sp</dimen>
+    <dimen name="unread_indicator_size">8dp</dimen>
+    <dimen name="unread_indicator_margin">8dp</dimen>
+    <dimen name="item_notification_body_margin_top">4dp</dimen>
+    <dimen name="notification_body_text_size">14sp</dimen>
+    <dimen name="item_notification_footer_margin_top">8dp</dimen>
+    <dimen name="notification_project_text_size">12sp</dimen>
+    <dimen name="notification_time_text_size">12sp</dimen>
+
 </resources>

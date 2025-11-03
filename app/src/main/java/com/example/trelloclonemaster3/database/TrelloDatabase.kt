@@ -5,16 +5,18 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import com.example.trelloclonemaster3.model.Notification
 
 @Database(
-    entities = [BoardEntity::class],
-    version = 1,
+    entities = [BoardEntity::class, Notification::class],
+    version = 2,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
 abstract class TrelloDatabase : RoomDatabase() {
 
     abstract fun boardDao(): BoardDao
+    abstract fun notificationDao(): NotificationDao
 
     companion object {
         @Volatile
