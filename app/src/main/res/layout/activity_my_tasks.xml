@@ -5,6 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
+    android:paddingTop="40dp"
     tools:context=".activities.MyTasksActivity">
 
     <com.google.android.material.appbar.AppBarLayout
@@ -33,11 +34,11 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
             android:background="@android:color/white"
-            app:tabMode="fixed"
             app:tabGravity="fill"
-            app:tabTextColor="@color/secondary_text_color"
+            app:tabIndicatorColor="@color/colorPrimary"
+            app:tabMode="fixed"
             app:tabSelectedTextColor="@color/colorPrimary"
-            app:tabIndicatorColor="@color/colorPrimary" />
+            app:tabTextColor="@color/secondary_text_color" />
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rv_my_tasks"

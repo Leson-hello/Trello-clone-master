@@ -5,6 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
+    android:paddingTop="40dp"
     tools:context=".activities.CardDetailsActivity">
 
     <com.google.android.material.appbar.AppBarLayout
@@ -17,6 +18,7 @@
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             android:background="?attr/colorPrimary"
+            android:paddingTop="40dp"
             app:popupTheme="@style/AppTheme.PopupOverlay" />
     </com.google.android.material.appbar.AppBarLayout>
 
@@ -64,10 +66,10 @@
                         android:id="@+id/et_description_card_details"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:gravity="top|start"
                         android:hint="@string/hint_card_description"
                         android:inputType="textMultiLine"
                         android:minLines="3"
-                        android:gravity="top|start"
                         android:textSize="@dimen/et_text_size" />
                 </com.google.android.material.textfield.TextInputLayout>
 
@@ -158,12 +160,12 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/card_details_value_marginTop"
+                    android:background="@drawable/status_background_pending"
+                    android:gravity="center"
                     android:padding="@dimen/card_details_value_padding"
                     android:text="Pending"
                     android:textColor="@color/primary_text_color"
-                    android:background="@drawable/status_background_pending"
-                    android:textStyle="bold"
-                    android:gravity="center" />
+                    android:textStyle="bold" />
 
                 <Button
                     android:id="@+id/btn_update_card_details"

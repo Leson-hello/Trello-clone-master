@@ -5,6 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
+    android:paddingTop="40dp"
     tools:context=".activities.CreatBoardActivity">
 
     <com.google.android.material.appbar.AppBarLayout
@@ -71,10 +72,10 @@
                         android:id="@+id/et_board_description"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:gravity="top"
                         android:hint="@string/project_description"
                         android:inputType="textMultiLine"
                         android:lines="3"
-                        android:gravity="top"
                         android:textSize="@dimen/et_text_size" />
 
                 </com.google.android.material.textfield.TextInputLayout>

@@ -5,6 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
+    android:paddingTop="40dp"
     tools:context=".activities.MembersActivity">
 
     <com.google.android.material.appbar.AppBarLayout
@@ -38,19 +39,19 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/members_cv_marginTop"
+                android:gravity="center"
                 android:text="@string/pending_join_requests"
                 android:textColor="@color/primary_text_color"
                 android:textSize="@dimen/item_board_name_text_size"
                 android:textStyle="bold"
-                android:gravity="center"
-                android:visibility="gone"/>
+                android:visibility="gone" />
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rv_pending_requests_list"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/default_margin"
-                android:visibility="gone"/>
+                android:visibility="gone" />
 
             <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
