@@ -10,7 +10,9 @@ import com.example.trelloclonemaster3.adapters.CardListItemAdapter
 
 class CrossColumnItemTouchHelper(
     private val activity: TaskListActivity,
-    private val taskListPosition: Int
+    private val taskListPosition: Int,
+    private val hasWritePermission: () -> Boolean = { true },
+    private val showPermissionDeniedMessage: () -> Unit = {}
 ) : ItemTouchHelper.SimpleCallback(
     ItemTouchHelper.UP or ItemTouchHelper.DOWN or ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT,
     0
@@ -43,6 +45,12 @@ class CrossColumnItemTouchHelper(
         viewHolder: RecyclerView.ViewHolder,
         target: RecyclerView.ViewHolder
     ): Boolean {
+        // FIXED: Check permissions before allowing drag operations
+        if (!hasWritePermission()) {
+            showPermissionDeniedMessage()
+            return false
+        }
+
         val fromPosition = viewHolder.adapterPosition
         val toPosition = target.adapterPosition
 
@@ -92,6 +100,12 @@ class CrossColumnItemTouchHelper(
 
         when (actionState) {
             ItemTouchHelper.ACTION_STATE_DRAG -> {
+                // FIXED: Check permissions before allowing drag to start
+                if (!hasWritePermission()) {
+                    showPermissionDeniedMessage()
+                    return
+                }
+
                 Log.d("CrossColumnDrag", "=== DRAG STARTED ===")
                 Log.d(
                     "CrossColumnDrag",
@@ -203,6 +217,19 @@ class CrossColumnItemTouchHelper(
             scaleX = 1.0f
             scaleY = 1.0f
             elevation = 0f
+        }
+
+        // FIXED: Check permissions before allowing drag to finish
+        if (!hasWritePermission()) {
+            showPermissionDeniedMessage()
+            // Reset all variables
+            Log.d("CrossColumnDrag", "User lacks write permissions. Aborting clearView actions.")
+            draggedFromPosition = -1
+            isInterColumnDrag = false
+            targetColumn = -1
+            totalDragDistanceX = 0f
+            Log.d("CrossColumnDrag", "=== CLEAR VIEW COMPLETE ===")
+            return
         }
 
         // FIXED: Use viewHolder.adapterPosition as fallback if draggedFromPosition is -1

@@ -26,6 +26,28 @@ import kotlin.collections.ArrayList
 open class TaskListItemAdapter(private val context: Context, private var list: ArrayList<Tasks>):
         RecyclerView.Adapter<RecyclerView.ViewHolder>()  {
 
+    // NEW: Check if current user has write permissions
+    private fun hasWritePermission(): Boolean {
+        return if (context is TaskListActivity) {
+            val currentUserId =
+                com.example.trelloclonemaster3.firebase.FirestoreClass().getCurrentUserID()
+            val userStatus = context.mBoardDetails.assignedTo[currentUserId]
+            // Only allow write access for Members and Managers, not for Pending users
+            userStatus == "Member" || userStatus == "Manager"
+        } else {
+            false
+        }
+    }
+
+    // NEW: Show permission denied message
+    private fun showPermissionDeniedMessage() {
+        Toast.makeText(
+            context,
+            "You don't have permission to modify this project. Your join request is still pending approval.",
+            Toast.LENGTH_LONG
+        ).show()
+    }
+
     private class MyViewHolder(view: View): RecyclerView.ViewHolder(view)
 
     private var mPositionDraggedFrom = -1
@@ -69,6 +91,10 @@ open class TaskListItemAdapter(private val context: Context, private var list: A
                 holder.itemView.findViewById<CardView>(R.id.cv_add_task_list_name).visibility = View.GONE
             }
             holder.itemView.findViewById<ImageButton>(R.id.ib_done_list_name).setOnClickListener {
+                if (!hasWritePermission()) {
+                    showPermissionDeniedMessage()
+                    return@setOnClickListener
+                }
                 val listName = holder.itemView.findViewById<TextView>(R.id.et_task_list_name).text.toString()
 
                 if(listName.isNotEmpty()){
@@ -81,6 +107,10 @@ open class TaskListItemAdapter(private val context: Context, private var list: A
             }
 
             holder.itemView.findViewById<ImageButton>(R.id.ib_edit_list_name).setOnClickListener {
+                if (!hasWritePermission()) {
+                    showPermissionDeniedMessage()
+                    return@setOnClickListener
+                }
                 holder.itemView.findViewById<TextView>(R.id.et_edit_task_list_name).text = model.title
                 holder.itemView.findViewById<LinearLayout>(R.id.ll_title_view).visibility = View.GONE
                 holder.itemView.findViewById<CardView>(R.id.cv_edit_task_list_name).visibility = View.VISIBLE
@@ -92,6 +122,10 @@ open class TaskListItemAdapter(private val context: Context, private var list: A
 
             // 1. Cập nhật tên Task List
             holder.itemView.findViewById<ImageButton>(R.id.ib_done_edit_list_name).setOnClickListener {
+                if (!hasWritePermission()) {
+                    showPermissionDeniedMessage()
+                    return@setOnClickListener
+                }
                 val listName = holder.itemView.findViewById<TextView>(R.id.et_edit_task_list_name).text.toString()
                 if(listName.isNotEmpty()){
                     if(context is TaskListActivity){
@@ -104,10 +138,18 @@ open class TaskListItemAdapter(private val context: Context, private var list: A
 
             // 2. Xóa Task List
             holder.itemView.findViewById<ImageButton>(R.id.ib_delete_list).setOnClickListener {
+                if (!hasWritePermission()) {
+                    showPermissionDeniedMessage()
+                    return@setOnClickListener
+                }
                 alertDialogForDeleteList(holder.getAdapterPosition(), model.title!!) // Đã sửa
             }
 
             holder.itemView.findViewById<TextView>(R.id.tv_add_card).setOnClickListener {
+                if (!hasWritePermission()) {
+                    showPermissionDeniedMessage()
+                    return@setOnClickListener
+                }
                 holder.itemView.findViewById<TextView>(R.id.tv_add_card).visibility = View.GONE
                 holder.itemView.findViewById<CardView>(R.id.cv_add_card).visibility = View.VISIBLE
             }
@@ -119,6 +161,10 @@ open class TaskListItemAdapter(private val context: Context, private var list: A
 
             // 3. Thêm Card mới
             holder.itemView.findViewById<ImageButton>(R.id.ib_done_card_name).setOnClickListener {
+                if (!hasWritePermission()) {
+                    showPermissionDeniedMessage()
+                    return@setOnClickListener
+                }
                 val cardName = holder.itemView.findViewById<TextView>(R.id.et_card_name).text.toString()
 
                 if(cardName.isNotEmpty()){
@@ -157,7 +203,9 @@ open class TaskListItemAdapter(private val context: Context, private var list: A
             val itemTouchHelper = ItemTouchHelper(
                 com.example.trelloclonemaster3.utils.CrossColumnItemTouchHelper(
                     context as TaskListActivity,
-                    holder.adapterPosition
+                    holder.adapterPosition,
+                    ::hasWritePermission,
+                    ::showPermissionDeniedMessage
                 )
             )
             itemTouchHelper.attachToRecyclerView(holder.itemView.findViewById<RecyclerView>(R.id.rv_card_list))

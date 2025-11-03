@@ -24,6 +24,28 @@ open class CardListItemAdapter(
 
     private var onClickListener: OnClickListener? = null
 
+    // NEW: Check if current user has write permissions
+    private fun hasWritePermission(): Boolean {
+        return if (context is TaskListActivity) {
+            val currentUserId =
+                com.example.trelloclonemaster3.firebase.FirestoreClass().getCurrentUserID()
+            val userStatus = context.mBoardDetails.assignedTo[currentUserId]
+            // Only allow write access for Members and Managers, not for Pending users
+            userStatus == "Member" || userStatus == "Manager"
+        } else {
+            false
+        }
+    }
+
+    // NEW: Show permission denied message
+    private fun showPermissionDeniedMessage() {
+        android.widget.Toast.makeText(
+            context,
+            "You don't have permission to modify this project. Your join request is still pending approval.",
+            android.widget.Toast.LENGTH_LONG
+        ).show()
+    }
+
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
 
@@ -103,6 +125,10 @@ open class CardListItemAdapter(
         }
 
         holder.itemView.setOnClickListener {
+            if (!hasWritePermission()) {
+                showPermissionDeniedMessage()
+                return@setOnClickListener
+            }
             if(onClickListener != null){
                 // Đã sửa: Sử dụng bindingAdapterPosition cho vị trí ổn định
                 onClickListener!!.onClick(holder.bindingAdapterPosition)
@@ -135,6 +161,12 @@ open class CardListItemAdapter(
         cardPosition: Int,
         fromTaskListPosition: Int
     ) {
+        // FIXED: Check permissions before showing move dialog
+        if (!hasWritePermission()) {
+            showPermissionDeniedMessage()
+            return
+        }
+
         // Lấy tất cả task lists trừ "Add List" và thêm "(Hiện tại)" vào cột hiện tại
         val allTaskLists = activity.mBoardDetails.taskList.filter { it.title != "Add List" }
         val columnNames = allTaskLists.mapIndexed { index, tasks ->

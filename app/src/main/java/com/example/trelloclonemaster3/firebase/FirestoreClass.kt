@@ -5,18 +5,26 @@ import android.util.Log
 
 import android.widget.Toast
 
-
 import com.example.trelloclonemaster3.MainActivity
 import com.example.trelloclonemaster3.activities.*
 import com.example.trelloclonemaster3.model.Board
 import com.example.trelloclonemaster3.model.User
+import com.example.trelloclonemaster3.model.NotificationData
+import com.example.trelloclonemaster3.model.PushNotification
+import com.example.trelloclonemaster3.network.ApiClient
+import com.example.trelloclonemaster3.network.ApiInterface
 import com.example.trelloclonemaster3.utils.Constants
+import com.example.trelloclonemaster3.utils.FCMConstants
 import com.google.android.gms.tasks.Task
 import com.google.android.gms.tasks.Tasks
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.QuerySnapshot
 import com.google.firebase.firestore.SetOptions
+import okhttp3.ResponseBody
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
 class FirestoreClass {
 
@@ -455,12 +463,13 @@ class FirestoreClass {
                 )
                 activity.onJoinRequestSuccess(position)
 
-                // Get current user details to send notification
-                getCurrentUserForNotification(
+                // FIXED: Send notification to project manager about join request
+                sendJoinRequestNotificationToManager(
                     activity,
                     board.createdBy!!,
                     board.name!!,
-                    currentUserId
+                    currentUserId,
+                    board.documentId!!
                 )
             }
             .addOnFailureListener { e ->
@@ -469,48 +478,152 @@ class FirestoreClass {
             }
     }
 
-    private fun getCurrentUserForNotification(
+    // NEW: Send notification to project manager about join request
+    private fun sendJoinRequestNotificationToManager(
         activity: FindProjectsActivity,
-        boardOwnerId: String,
+        managerId: String,
         boardName: String,
-        requestingUserId: String
+        requestingUserId: String,
+        boardId: String
     ) {
+        // Get requesting user details first
         mFireStore.collection(Constants.USERS).document(requestingUserId).get()
-            .addOnSuccessListener { document ->
-                val requestingUser = document.toObject(User::class.java)!!
+            .addOnSuccessListener { requestingUserDoc ->
+                val requestingUser = requestingUserDoc.toObject(User::class.java)!!
+                val requestingUserName = requestingUser.name ?: "Unknown User"
 
-                // Get board owner details to send notification
-                getBoardOwnerForNotification(
-                    activity,
-                    boardOwnerId,
-                    boardName,
-                    requestingUser.name ?: "Unknown User"
-                )
+                // Get manager details to send notification
+                mFireStore.collection(Constants.USERS).document(managerId).get()
+                    .addOnSuccessListener { managerDoc ->
+                        val manager = managerDoc.toObject(User::class.java)!!
+
+                        // FIXED: Always store notification in Firestore as fallback
+                        storeInAppNotification(
+                            managerId,
+                            "New Join Request",
+                            "$requestingUserName wants to join your project '$boardName'",
+                            boardId,
+                            "join_request"
+                        )
+
+                        if (manager.fcmToken?.isNotEmpty() == true &&
+                            FCMConstants.SERVER_KEY.startsWith("AAAA") &&
+                            !FCMConstants.SERVER_KEY.contains("YOUR_ACTUAL_SERVER_KEY")
+                        ) {
+                            // Send push notification to manager only if FCM is properly configured
+                            val title = "New Join Request"
+                            val message = "$requestingUserName wants to join your project '$boardName'"
+
+                            val data = NotificationData(title, message)
+                            val pushNotification = PushNotification(data, manager.fcmToken!!)
+
+                            val service = ApiClient.getClient(FCMConstants.BASE_URL).create(ApiInterface::class.java)
+
+                            service.sendNotification(pushNotification)
+                                .enqueue(object : Callback<ResponseBody> {
+                                    override fun onResponse(
+                                        call: Call<ResponseBody>,
+                                        response: Response<ResponseBody>
+                                    ) {
+                                    if (response.isSuccessful) {
+                                        Log.d("FCM", "Join request notification sent successfully to manager: ${manager.name}")
+                                    } else {
+                                        Log.e("FCM Error", "Failed to send join request notification: ${response.code()}")
+                                        Log.d(
+                                            "Notification",
+                                            "Fallback: Notification stored in Firestore for manager: ${manager.name}"
+                                        )
+                                    }
+                                }
+
+                                override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
+                                    Log.e("FCM Error", "Network error sending join request notification", t)
+                                    Log.d(
+                                        "Notification",
+                                        "Fallback: Notification stored in Firestore for manager: ${manager.name}"
+                                    )
+                                }
+                            })
+                        } else {
+                            Log.w(
+                                "Notification",
+                                "FCM not configured or manager has no FCM token. Using in-app notification only."
+                            )
+                            Log.d(
+                                "Notification",
+                                "In-app notification stored for manager: ${manager.name}"
+                            )
+                        }
+                    }
+                    .addOnFailureListener { e ->
+                        Log.e("Manager Details", "Error getting manager details for notification", e)
+                    }
             }
             .addOnFailureListener { e ->
                 Log.e("User Details", "Error getting requesting user details", e)
             }
     }
 
-    private fun getBoardOwnerForNotification(
-        activity: FindProjectsActivity,
-        boardOwnerId: String,
-        boardName: String,
-        requestingUserName: String
+    // NEW: Store in-app notification in Firestore
+    private fun storeInAppNotification(
+        userId: String,
+        title: String,
+        message: String,
+        relatedId: String? = null,
+        notificationType: String = "general"
     ) {
-        mFireStore.collection(Constants.USERS).document(boardOwnerId).get()
-            .addOnSuccessListener { document ->
-                val boardOwner = document.toObject(User::class.java)!!
+        val notification = hashMapOf(
+            "title" to title,
+            "message" to message,
+            "userId" to userId,
+            "relatedId" to relatedId,
+            "type" to notificationType,
+            "timestamp" to System.currentTimeMillis(),
+            "isRead" to false
+        )
 
-                // Here you would typically send a push notification to the board owner
-                // For now, we'll just log it
-                Log.e(
-                    "Notification",
-                    "Would send notification to ${boardOwner.name} about join request from $requestingUserName for board: $boardName"
-                )
+        mFireStore.collection("notifications")
+            .add(notification)
+            .addOnSuccessListener { documentReference ->
+                Log.d("Notification", "In-app notification stored with ID: ${documentReference.id}")
             }
             .addOnFailureListener { e ->
-                Log.e("Board Owner Details", "Error getting board owner details", e)
+                Log.e("Notification", "Failed to store in-app notification", e)
+            }
+    }
+
+    // NEW: Get notifications for a user (to be used in MainActivity or notification activity)
+    fun getUserNotifications(userId: String, callback: (ArrayList<HashMap<String, Any>>) -> Unit) {
+        mFireStore.collection("notifications")
+            .whereEqualTo("userId", userId)
+            .whereEqualTo("isRead", false)
+            .orderBy("timestamp", com.google.firebase.firestore.Query.Direction.DESCENDING)
+            .get()
+            .addOnSuccessListener { documents ->
+                val notifications = ArrayList<HashMap<String, Any>>()
+                for (document in documents) {
+                    val notification = document.data.toMutableMap()
+                    notification["id"] = document.id
+                    notifications.add(HashMap(notification))
+                }
+                callback(notifications)
+            }
+            .addOnFailureListener { e ->
+                Log.e("Notifications", "Error getting user notifications", e)
+                callback(ArrayList())
+            }
+    }
+
+    // NEW: Mark notification as read
+    fun markNotificationAsRead(notificationId: String) {
+        mFireStore.collection("notifications")
+            .document(notificationId)
+            .update("isRead", true)
+            .addOnSuccessListener {
+                Log.d("Notification", "Notification marked as read: $notificationId")
+            }
+            .addOnFailureListener { e ->
+                Log.e("Notification", "Failed to mark notification as read", e)
             }
     }
   

@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
+import android.widget.Toast
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.trelloclonemaster3.R
@@ -99,7 +100,31 @@ class TaskListActivity : BaseActivity() {
         FirestoreClass().getBoardDetails(this, mBoardDetails.documentId!!)
     }
 
+    // NEW: Check if current user has write permissions
+    private fun hasWritePermission(): Boolean {
+        val currentUserId = FirestoreClass().getCurrentUserID()
+        val userStatus = mBoardDetails.assignedTo[currentUserId]
+
+        // Only allow write access for Members and Managers, not for Pending users
+        return userStatus == "Member" || userStatus == "Manager"
+    }
+
+    // NEW: Show permission denied message
+    private fun showPermissionDeniedMessage() {
+        Toast.makeText(
+            this,
+            "You don't have permission to modify this project. Your join request is still pending approval.",
+            Toast.LENGTH_LONG
+        ).show()
+    }
+
     fun createTaskList(taskListName: String) {
+        // FIXED: Check permissions before allowing task list creation
+        if (!hasWritePermission()) {
+            showPermissionDeniedMessage()
+            return
+        }
+
         val task = Tasks(taskListName, FirestoreClass().getCurrentUserID())
         mBoardDetails.taskList.add(0,task)
         mBoardDetails.taskList.removeAt(mBoardDetails.taskList.size-1)
@@ -109,6 +134,12 @@ class TaskListActivity : BaseActivity() {
     }
 
     fun updateTaskList(position: Int, listName: String, model: Tasks){
+        // FIXED: Check permissions before allowing task list updates
+        if (!hasWritePermission()) {
+            showPermissionDeniedMessage()
+            return
+        }
+
         val task = Tasks(listName,model.createdBy)
 
         mBoardDetails.taskList[position] = task
@@ -119,6 +150,12 @@ class TaskListActivity : BaseActivity() {
     }
 
     fun deleteTaskList(position: Int){
+        // FIXED: Check permissions before allowing task list deletion
+        if (!hasWritePermission()) {
+            showPermissionDeniedMessage()
+            return
+        }
+
         mBoardDetails.taskList.removeAt(position)
         mBoardDetails.taskList.removeAt(mBoardDetails.taskList.size-1)
 
@@ -127,6 +164,12 @@ class TaskListActivity : BaseActivity() {
     }
 
     fun addCardToArrayList(position: Int,cardName: String){
+        // FIXED: Check permissions before allowing card creation
+        if (!hasWritePermission()) {
+            showPermissionDeniedMessage()
+            return
+        }
+
         mBoardDetails.taskList.removeAt(mBoardDetails.taskList.size-1)
 
         val cardAssignedUserList: ArrayList<String> = ArrayList()
@@ -181,6 +224,12 @@ class TaskListActivity : BaseActivity() {
     }
 
     fun updateCardsInTaskList(taskListPosition: Int, cards: ArrayList<Card>){
+        // FIXED: Check permissions before allowing card updates
+        if (!hasWritePermission()) {
+            showPermissionDeniedMessage()
+            return
+        }
+
         mBoardDetails.taskList.removeAt(mBoardDetails.taskList.size-1)
         mBoardDetails.taskList[taskListPosition].cards = cards
 
@@ -213,6 +262,12 @@ class TaskListActivity : BaseActivity() {
         cardPosition: Int,
         targetPosition: Int
     ) {
+        // FIXED: Check permissions before allowing card moves
+        if (!hasWritePermission()) {
+            showPermissionDeniedMessage()
+            return
+        }
+
         val card = mBoardDetails.taskList[fromListPosition].cards.removeAt(cardPosition)
         
         // Update card status based on target column
@@ -250,6 +305,12 @@ class TaskListActivity : BaseActivity() {
 
     // Method for context menu based card movement
     fun moveCardToColumn(fromListPosition: Int, cardPosition: Int, toListPosition: Int) {
+        // FIXED: Check permissions before allowing card moves
+        if (!hasWritePermission()) {
+            showPermissionDeniedMessage()
+            return
+        }
+
         try {
             if (fromListPosition == toListPosition) {
                 Log.d("TaskListActivity", "Same column, no move needed")
@@ -302,6 +363,12 @@ class TaskListActivity : BaseActivity() {
         cardPosition: Int,
         targetPosition: Int
     ) {
+        // FIXED: Check permissions before allowing card drag and drop
+        if (!hasWritePermission()) {
+            showPermissionDeniedMessage()
+            return
+        }
+
         try {
             Log.d("TaskListActivity", "=== MOVE CARD BETWEEN COLUMNS ===")
             Log.d(
