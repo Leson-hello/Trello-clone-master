@@ -13,6 +13,11 @@ object Constants {
     const val USERS : String = "Users"
     const val BOARDS: String = "Boards"
 
+    // Chat related constants
+    const val CHAT_ROOMS: String = "ChatRooms"
+    const val MESSAGES: String = "Messages"
+    const val CHAT_ROOM: String = "chatRoom"
+
     const val IMAGE: String = "image"
     const val NAME: String = "name"
     const val MOBILE: String = "mobile"

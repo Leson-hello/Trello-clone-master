@@ -115,6 +115,9 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
             R.id.nav_my_tasks -> {
                 startActivity(Intent(this, MyTasksActivity::class.java))
             }
+            R.id.nav_chat -> {
+                startActivity(Intent(this, ChatRoomsActivity::class.java))
+            }
             R.id.nav_notifications -> {
                 startActivity(Intent(this, NotificationsActivity::class.java))
             }
@@ -165,6 +168,9 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
 
             // Setup notification badge with current user ID
             notificationBadgeHelper.setupNotificationBadge(FirestoreClass().getCurrentUserID())
+
+            // Initialize chat rooms for existing boards
+            FirestoreClass().initializeChatRoomsForExistingBoards(this)
         }
     }
 

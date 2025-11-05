@@ -12,6 +12,10 @@
             android:icon="@drawable/ic_nav_tasks"
             android:title="My Tasks" />
         <item
+            android:id="@+id/nav_chat"
+            android:icon="@drawable/ic_chat_empty_state"
+            android:title="Chat" />
+        <item
             android:id="@+id/nav_notifications"
             android:icon="@drawable/ic_nav_notifications"
             android:title="@string/nav_notifications" />

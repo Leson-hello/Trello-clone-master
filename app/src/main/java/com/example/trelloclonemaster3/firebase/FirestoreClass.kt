@@ -22,11 +22,16 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.QuerySnapshot
 import com.google.firebase.firestore.SetOptions
+import com.google.firebase.firestore.Query
 import kotlinx.coroutines.launch
 import okhttp3.ResponseBody
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import com.example.trelloclonemaster3.model.ChatRoom
+import com.example.trelloclonemaster3.model.ChatMessage
+import com.example.trelloclonemaster3.activities.ChatRoomsActivity
+import com.example.trelloclonemaster3.activities.ChatActivity
 
 class FirestoreClass {
 
@@ -120,18 +125,51 @@ class FirestoreClass {
         Log.d(Constants.DEBUG_TAG, "Creating new board...")
         Constants.debugBoardInfo(boardInfo, "Creating")
 
-        mFireStore.collection(Constants.BOARDS).document().set(boardInfo, SetOptions.merge())
-                .addOnSuccessListener {
-                    Log.d(Constants.DEBUG_TAG, "Board created successfully: ${boardInfo.name}")
-                    Toast.makeText(activity,"Board created successfully",Toast.LENGTH_SHORT).show()
-                    activity.boardCreatedSuccessfully()
-                }.addOnFailureListener {
-                    exception ->
+        val boardsCollection = mFireStore.collection(Constants.BOARDS)
+        val newBoardDocRef = boardsCollection.document()
+
+        newBoardDocRef.set(boardInfo, SetOptions.merge())
+            .addOnSuccessListener {
+                Log.d(Constants.DEBUG_TAG, "Board created successfully: ${boardInfo.name}")
+
+                // Get the board document ID and update the board
+                val boardId = newBoardDocRef.id
+                val updatedBoard = boardInfo.copy(documentId = boardId)
+
+                // Update the board with its document ID
+                boardsCollection.document(boardId)
+                    .update("documentId", boardId)
+                    .addOnSuccessListener {
+                        // Create chat room for the board
+                        createChatRoomForBoard(activity, updatedBoard)
+
+                        Toast.makeText(activity, "Board created successfully", Toast.LENGTH_SHORT)
+                            .show()
+                        activity.boardCreatedSuccessfully()
+                    }
+                    .addOnFailureListener { exception ->
+                        Log.e(
+                            Constants.DEBUG_TAG,
+                            "Failed to update board ID: ${boardInfo.name}",
+                            exception
+                        )
+                        activity.hideCustomProgressDialog()
+                        Toast.makeText(
+                            activity,
+                            "Something went wrong please try again later",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+            }.addOnFailureListener { exception ->
                 Log.e(Constants.DEBUG_TAG, "Failed to create board: ${boardInfo.name}", exception)
-                    activity.hideCustomProgressDialog()
-                    Log.e("Update","Something Went Wrong")
-                    Toast.makeText(activity,"Something went wrong please try again later",Toast.LENGTH_SHORT).show()
-                }
+                activity.hideCustomProgressDialog()
+                Log.e("Update", "Something Went Wrong")
+                Toast.makeText(
+                    activity,
+                    "Something went wrong please try again later",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
     }
 
     fun getBoardList(activity: MainActivity){
@@ -294,15 +332,13 @@ class FirestoreClass {
     }
     fun getCurrentUserDetails(activity: BaseActivity) {
         mFireStore.collection(Constants.USERS).document(getCurrentUserID()).get()
-            .addOnSuccessListener {
-                    document ->
+            .addOnSuccessListener { document ->
                 val user = document.toObject(User::class.java)!!
                 when (activity) {
-
                     is MembersActivity -> activity.onGetCurrentUserSuccess(user)
+                    is ChatActivity -> activity.setCurrentUser(user)
                 }
-            }.addOnFailureListener {
-                    e ->
+            }.addOnFailureListener { e ->
                 Log.e("Current User Details", "Error getting current user details", e)
                 activity.hideCustomProgressDialog()
                 Toast.makeText(activity, "Failed to get current user details.", Toast.LENGTH_SHORT).show()
@@ -872,6 +908,337 @@ class FirestoreClass {
                 Log.e("FCM_DEBUG", "❌ Error getting manager details", e)
                 Log.e("FCM_DEBUG", "=== JOIN REQUEST NOTIFICATION DEBUG END (ERROR) ===")
             }
+    }
+
+
+    // ====================== CHAT FUNCTIONALITY METHODS ======================
+
+    /**
+     * Initialize chat rooms for existing boards that don't have chat rooms
+     */
+    fun initializeChatRoomsForExistingBoards(activity: Activity) {
+        val currentUserId = getCurrentUserID()
+
+        // Get all boards for current user
+        mFireStore.collection(Constants.BOARDS)
+            .whereGreaterThan("assignedTo.$currentUserId", "")
+            .get()
+            .addOnSuccessListener { boardDocuments ->
+                for (boardDoc in boardDocuments) {
+                    val board = boardDoc.toObject(Board::class.java)
+                    board.documentId = boardDoc.id
+
+                    // Check if chat room already exists for this board
+                    mFireStore.collection(Constants.CHAT_ROOMS)
+                        .whereEqualTo("boardId", board.documentId)
+                        .get()
+                        .addOnSuccessListener { chatRoomDocs ->
+                            if (chatRoomDocs.isEmpty) {
+                                // No chat room exists, create one
+                                createChatRoomForBoard(activity, board)
+                                Log.d("ChatInit", "Created chat room for board: ${board.name}")
+                            } else {
+                                Log.d(
+                                    "ChatInit",
+                                    "Chat room already exists for board: ${board.name}"
+                                )
+                            }
+                        }
+                        .addOnFailureListener { e ->
+                            Log.e(
+                                "ChatInit",
+                                "Error checking chat room for board: ${board.name}",
+                                e
+                            )
+                        }
+                }
+            }
+            .addOnFailureListener { e ->
+                Log.e("ChatInit", "Error getting boards for chat room initialization", e)
+            }
+    }
+
+    /**
+     * Create a new chat room for a board/project
+     */
+    fun createChatRoomForBoard(activity: Activity, board: Board) {
+        val chatRoom = ChatRoom(
+            name = "${board.name} - Team Chat",
+            description = "Team chat for ${board.name}",
+            type = "group",
+            participants = board.assignedTo, // Use the same participants as the board
+            boardId = board.documentId!!,
+            createdBy = getCurrentUserID(),
+            createdAt = System.currentTimeMillis()
+        )
+
+        mFireStore.collection(Constants.CHAT_ROOMS)
+            .add(chatRoom)
+            .addOnSuccessListener { documentReference ->
+                Log.d("ChatRoom", "Chat room created successfully: ${documentReference.id}")
+                // Update the chat room with its own ID
+                val chatRoomId = documentReference.id
+                mFireStore.collection(Constants.CHAT_ROOMS)
+                    .document(chatRoomId)
+                    .update("id", chatRoomId)
+                    .addOnSuccessListener {
+                        Log.d("ChatRoom", "Chat room ID updated successfully")
+                    }
+            }
+            .addOnFailureListener { e ->
+                Log.e("ChatRoom", "Error creating chat room", e)
+            }
+    }
+
+    /**
+     * Get all chat rooms for the current user
+     */
+    fun getChatRooms(activity: ChatRoomsActivity) {
+        val currentUserId = getCurrentUserID()
+
+        mFireStore.collection(Constants.CHAT_ROOMS)
+            .whereEqualTo("participants.$currentUserId", "Member")
+            .get()
+            .addOnSuccessListener { documents ->
+                val chatRoomsList = ArrayList<ChatRoom>()
+                for (document in documents) {
+                    try {
+                        val chatRoom = document.toObject(ChatRoom::class.java)
+                        chatRoom.copy(id = document.id).also { updatedChatRoom ->
+                            // Only add active chat rooms
+                            if (updatedChatRoom.isActive) {
+                                chatRoomsList.add(updatedChatRoom)
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Log.e("ChatRooms", "Error parsing chat room: ${document.id}", e)
+                    }
+                }
+
+                // Sort by last message time locally (most recent first)
+                chatRoomsList.sortByDescending { it.lastMessageTime }
+
+                activity.populateChatRoomsList(chatRoomsList)
+            }
+            .addOnFailureListener { e ->
+                Log.e("ChatRooms", "Error getting chat rooms", e)
+                activity.onChatRoomsLoadFailed()
+            }
+    }
+
+    /**
+     * Get messages for a specific chat room
+     */
+    fun getChatMessages(activity: ChatActivity, chatRoomId: String) {
+        mFireStore.collection(Constants.CHAT_ROOMS)
+            .document(chatRoomId)
+            .collection(Constants.MESSAGES)
+            .orderBy("timestamp", Query.Direction.ASCENDING)
+            .get()
+            .addOnSuccessListener { documents ->
+                val messagesList = ArrayList<ChatMessage>()
+                for (document in documents) {
+                    try {
+                        val message = document.toObject(ChatMessage::class.java)
+                        messagesList.add(message.copy(id = document.id))
+                    } catch (e: Exception) {
+                        Log.e("ChatMessages", "Error parsing message: ${document.id}", e)
+                    }
+                }
+                activity.populateMessagesList(messagesList)
+            }
+            .addOnFailureListener { e ->
+                Log.e("ChatMessages", "Error getting messages", e)
+                activity.onMessagesLoadFailed()
+            }
+    }
+
+    /**
+     * Send a new chat message
+     */
+    fun sendChatMessage(activity: ChatActivity, chatRoomId: String, message: ChatMessage) {
+        // Add message to messages subcollection
+        mFireStore.collection(Constants.CHAT_ROOMS)
+            .document(chatRoomId)
+            .collection(Constants.MESSAGES)
+            .add(message)
+            .addOnSuccessListener { documentReference ->
+                Log.d("ChatMessage", "Message sent successfully: ${documentReference.id}")
+
+                // Update chat room's last message info
+                updateChatRoomLastMessage(chatRoomId, message)
+
+                // Get chat room details to send notifications
+                mFireStore.collection(Constants.CHAT_ROOMS)
+                    .document(chatRoomId)
+                    .get()
+                    .addOnSuccessListener { chatRoomDoc ->
+                        val chatRoom = chatRoomDoc.toObject(ChatRoom::class.java)
+                        if (chatRoom != null) {
+                            // Send notifications to all participants except sender
+                            sendChatNotification(
+                                activity,
+                                chatRoom.copy(id = chatRoomId),
+                                message,
+                                message.senderId
+                            )
+                        }
+                    }
+
+                activity.onMessageSent()
+            }
+            .addOnFailureListener { e ->
+                Log.e("ChatMessage", "Error sending message", e)
+                activity.onMessageSendFailed()
+            }
+    }
+
+    /**
+     * Update chat room's last message information
+     */
+    private fun updateChatRoomLastMessage(chatRoomId: String, message: ChatMessage) {
+        val updates = hashMapOf<String, Any>(
+            "lastMessage" to message.message,
+            "lastMessageTime" to message.timestamp as Any,
+            "lastMessageSender" to message.senderName as Any
+        )
+
+        mFireStore.collection(Constants.CHAT_ROOMS)
+            .document(chatRoomId)
+            .update(updates)
+            .addOnSuccessListener {
+                Log.d("ChatRoom", "Last message updated successfully")
+            }
+            .addOnFailureListener { e ->
+                Log.e("ChatRoom", "Error updating last message", e)
+            }
+    }
+
+    /**
+     * Mark messages as read for a user
+     */
+    fun markMessagesAsRead(chatRoomId: String, userId: String) {
+        val currentTime = System.currentTimeMillis()
+
+        // Update unread count in chat room
+        mFireStore.collection(Constants.CHAT_ROOMS)
+            .document(chatRoomId)
+            .update("unreadCount.$userId", 0)
+            .addOnSuccessListener {
+                Log.d("ChatRoom", "Messages marked as read for user: $userId")
+            }
+            .addOnFailureListener { e ->
+                Log.e("ChatRoom", "Error marking messages as read", e)
+            }
+    }
+
+    /**
+     * Create a direct message chat room between two users
+     */
+    fun createDirectMessage(
+        activity: Activity,
+        otherUser: User,
+        currentUser: User,
+        callback: (String?) -> Unit
+    ) {
+        // Check if direct message already exists
+        val participants = hashMapOf(
+            currentUser.id!! to "Member",
+            otherUser.id!! to "Member"
+        )
+
+        mFireStore.collection(Constants.CHAT_ROOMS)
+            .whereEqualTo("type", "direct")
+            .whereEqualTo("participants", participants)
+            .get()
+            .addOnSuccessListener { documents ->
+                if (documents.isEmpty) {
+                    // Create new direct message chat room
+                    val chatRoom = ChatRoom(
+                        name = "${currentUser.name} & ${otherUser.name}",
+                        description = "Direct message between ${currentUser.name} and ${otherUser.name}",
+                        type = "direct",
+                        participants = participants,
+                        boardId = "", // No associated board for direct messages
+                        createdBy = currentUser.id!!,
+                        createdAt = System.currentTimeMillis()
+                    )
+
+                    mFireStore.collection(Constants.CHAT_ROOMS)
+                        .add(chatRoom)
+                        .addOnSuccessListener { documentReference ->
+                            val chatRoomId = documentReference.id
+                            mFireStore.collection(Constants.CHAT_ROOMS)
+                                .document(chatRoomId)
+                                .update("id", chatRoomId)
+                                .addOnSuccessListener {
+                                    callback(chatRoomId)
+                                }
+                        }
+                        .addOnFailureListener { e ->
+                            Log.e("DirectMessage", "Error creating direct message", e)
+                            callback(null)
+                        }
+                } else {
+                    // Return existing chat room ID
+                    callback(documents.documents[0].id)
+                }
+            }
+            .addOnFailureListener { e ->
+                Log.e("DirectMessage", "Error checking for existing direct message", e)
+                callback(null)
+            }
+    }
+
+    /**
+     * Send chat notification to participants
+     */
+    fun sendChatNotification(
+        context: android.content.Context,
+        chatRoom: ChatRoom,
+        message: ChatMessage,
+        excludeUserId: String // Don't send notification to the sender
+    ) {
+        val title = "New message in ${chatRoom.name}"
+        val notificationMessage = "${message.senderName}: ${message.message}"
+        val data = mapOf(
+            "chatRoomId" to chatRoom.id,
+            "chatRoomName" to chatRoom.name,
+            "senderName" to message.senderName,
+            "messageContent" to message.message
+        )
+
+        // Send notification to all participants except the sender
+        for ((userId, _) in chatRoom.participants) {
+            if (userId != excludeUserId) {
+                mFireStore.collection(Constants.USERS).document(userId).get()
+                    .addOnSuccessListener { document ->
+                        val user = document.toObject(User::class.java)!!
+
+                        if (user.fcmToken?.isNotEmpty() == true) {
+                            kotlinx.coroutines.GlobalScope.launch {
+                                val fcmService = FCMv1ApiService(context)
+                                fcmService.sendDataMessage(
+                                    user.fcmToken!!,
+                                    title,
+                                    notificationMessage,
+                                    data,
+                                    "chat_message"
+                                )
+                            }
+                        }
+
+                        // Store in-app notification
+                        storeInAppNotification(
+                            userId,
+                            title,
+                            notificationMessage,
+                            chatRoom.id,
+                            "chat_message"
+                        )
+                    }
+            }
+        }
     }
 
 }

@@ -13,6 +13,10 @@
     <color name="primary_text_color">#363A43</color>
     <color name="secondary_text_color">#7A8089</color>
 
+    <!-- Alias colors for consistency -->
+    <color name="colorPrimaryText">@color/primary_text_color</color>
+    <color name="colorSecondaryText">@color/secondary_text_color</color>
+
     <color name="snackBar_error_color">#F72400</color>
 
     <color name="Divider_Color">#EAEAEA</color>
@@ -25,4 +29,9 @@
     <color name="success_color">#4CAF50</color>
     <color name="pending_status_color">#FF9800</color>
     <color name="card_background_color">#FFFFFF</color>
+
+    <!-- Chat colors -->
+    <color name="chat_sent_message_bg">#0C90F1</color>
+    <color name="chat_received_message_bg">#F5F5F5</color>
+    <color name="unread_badge_color">#F44336</color>
 </resources>
