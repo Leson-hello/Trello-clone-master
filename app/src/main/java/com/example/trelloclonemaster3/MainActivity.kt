@@ -169,9 +169,20 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
             // Setup notification badge with current user ID
             notificationBadgeHelper.setupNotificationBadge(FirestoreClass().getCurrentUserID())
 
-            // Initialize chat rooms for existing boards
+            // Initialize and clean up chat rooms for existing boards
             FirestoreClass().initializeChatRoomsForExistingBoards(this)
+
+            // Clean up any duplicate chat rooms manually
+            cleanupAllDuplicateChatRooms()
         }
+    }
+
+    /**
+     * Clean up duplicate chat rooms for all user's boards
+     */
+    private fun cleanupAllDuplicateChatRooms() {
+        Log.d("MainActivity", "Starting cleanup of duplicate chat rooms")
+        FirestoreClass().cleanupAllUserDuplicateChatRooms(this)
     }
 
     fun populateBoardListInUI(boardList: ArrayList<Board>){

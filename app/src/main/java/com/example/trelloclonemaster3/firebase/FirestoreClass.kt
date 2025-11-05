@@ -914,9 +914,69 @@ class FirestoreClass {
     // ====================== CHAT FUNCTIONALITY METHODS ======================
 
     /**
-     * Initialize chat rooms for existing boards that don't have chat rooms
+     * Clean up duplicate chat rooms for a board and merge messages
      */
-    fun initializeChatRoomsForExistingBoards(activity: Activity) {
+    fun cleanupDuplicateChatRooms(activity: Activity, boardId: String) {
+        Log.d("ChatCleanup", "Starting cleanup for board: $boardId")
+
+        mFireStore.collection(Constants.CHAT_ROOMS)
+            .whereEqualTo("boardId", boardId)
+            .whereEqualTo("type", "group")
+            .get()
+            .addOnSuccessListener { chatRooms ->
+                if (chatRooms.size() > 1) {
+                    Log.d("ChatCleanup", "Found ${chatRooms.size()} duplicate chat rooms")
+
+                    val chatRoomsList = chatRooms.documents
+                    // Keep the oldest chat room (first created)
+                    val primaryChatRoom = chatRoomsList.minByOrNull { doc ->
+                        doc.getLong("createdAt") ?: Long.MAX_VALUE
+                    }
+
+                    if (primaryChatRoom != null) {
+                        val primaryChatRoomId = primaryChatRoom.id
+                        Log.d("ChatCleanup", "Primary chat room: $primaryChatRoomId")
+
+                        // Merge messages from duplicate chat rooms to primary
+                        for (duplicateDoc in chatRoomsList) {
+                            if (duplicateDoc.id != primaryChatRoomId) {
+                                mergeChatRoomMessages(duplicateDoc.id, primaryChatRoomId) {
+                                    // After merging messages, delete the duplicate chat room
+                                    deleteChatRoom(duplicateDoc.id)
+                                }
+                            }
+                        }
+
+                        // Update primary chat room participants with latest board members
+                        getCurrentBoardMembers(boardId) { boardMembers ->
+                            if (boardMembers.isNotEmpty()) {
+                                mFireStore.collection(Constants.CHAT_ROOMS)
+                                    .document(primaryChatRoomId)
+                                    .update("participants", boardMembers)
+                                    .addOnSuccessListener {
+                                        Log.d(
+                                            "ChatCleanup",
+                                            "Updated participants for primary chat room"
+                                        )
+                                    }
+                            }
+                        }
+                    }
+                } else {
+                    Log.d("ChatCleanup", "No duplicate chat rooms found for board: $boardId")
+                }
+            }
+            .addOnFailureListener { e ->
+                Log.e("ChatCleanup", "Error during cleanup", e)
+            }
+    }
+
+    /**
+     * Clean up duplicate chat rooms for all user's boards
+     */
+    fun cleanupAllUserDuplicateChatRooms(activity: Activity) {
+        Log.d("ChatCleanup", "Starting cleanup of all duplicate chat rooms")
+
         val currentUserId = getCurrentUserID()
 
         // Get all boards for current user
@@ -928,20 +988,188 @@ class FirestoreClass {
                     val board = boardDoc.toObject(Board::class.java)
                     board.documentId = boardDoc.id
 
-                    // Check if chat room already exists for this board
+                    // Clean up duplicates for each board
+                    cleanupDuplicateChatRooms(activity, board.documentId!!)
+                }
+                Log.d("ChatCleanup", "Cleanup initiated for ${boardDocuments.size()} boards")
+            }
+            .addOnFailureListener { e ->
+                Log.e("ChatCleanup", "Error during chat room cleanup", e)
+            }
+    }
+
+    /**
+     * Merge messages from source chat room to target chat room
+     */
+    private fun mergeChatRoomMessages(
+        sourceChatRoomId: String,
+        targetChatRoomId: String,
+        onComplete: () -> Unit
+    ) {
+        Log.d("ChatMerge", "Merging messages from $sourceChatRoomId to $targetChatRoomId")
+
+        mFireStore.collection(Constants.CHAT_ROOMS)
+            .document(sourceChatRoomId)
+            .collection(Constants.MESSAGES)
+            .get()
+            .addOnSuccessListener { messages ->
+                if (messages.isEmpty) {
+                    Log.d("ChatMerge", "No messages to merge")
+                    onComplete()
+                    return@addOnSuccessListener
+                }
+
+                val batch = mFireStore.batch()
+                var processedCount = 0
+
+                for (messageDoc in messages.documents) {
+                    val messageData = messageDoc.data
+                    if (messageData != null) {
+                        val newMessageRef = mFireStore.collection(Constants.CHAT_ROOMS)
+                            .document(targetChatRoomId)
+                            .collection(Constants.MESSAGES)
+                            .document()
+
+                        batch.set(newMessageRef, messageData)
+                        processedCount++
+                    }
+                }
+
+                if (processedCount > 0) {
+                    batch.commit()
+                        .addOnSuccessListener {
+                            Log.d("ChatMerge", "Successfully merged $processedCount messages")
+                            onComplete()
+                        }
+                        .addOnFailureListener { e ->
+                            Log.e("ChatMerge", "Error merging messages", e)
+                            onComplete()
+                        }
+                } else {
+                    onComplete()
+                }
+            }
+            .addOnFailureListener { e ->
+                Log.e("ChatMerge", "Error getting messages to merge", e)
+                onComplete()
+            }
+    }
+
+    /**
+     * Delete a chat room and all its messages
+     */
+    private fun deleteChatRoom(chatRoomId: String) {
+        Log.d("ChatDelete", "Deleting chat room: $chatRoomId")
+
+        // First delete all messages in the chat room
+        mFireStore.collection(Constants.CHAT_ROOMS)
+            .document(chatRoomId)
+            .collection(Constants.MESSAGES)
+            .get()
+            .addOnSuccessListener { messages ->
+                val batch = mFireStore.batch()
+
+                for (messageDoc in messages.documents) {
+                    batch.delete(messageDoc.reference)
+                }
+
+                // Delete the chat room document itself
+                batch.delete(mFireStore.collection(Constants.CHAT_ROOMS).document(chatRoomId))
+
+                batch.commit()
+                    .addOnSuccessListener {
+                        Log.d("ChatDelete", "Successfully deleted chat room: $chatRoomId")
+                    }
+                    .addOnFailureListener { e ->
+                        Log.e("ChatDelete", "Error deleting chat room", e)
+                    }
+            }
+    }
+
+    /**
+     * Get current board members
+     */
+    private fun getCurrentBoardMembers(
+        boardId: String,
+        callback: (HashMap<String, String>) -> Unit
+    ) {
+        mFireStore.collection(Constants.BOARDS)
+            .document(boardId)
+            .get()
+            .addOnSuccessListener { boardDoc ->
+                val board = boardDoc.toObject(Board::class.java)
+                callback(board?.assignedTo ?: HashMap())
+            }
+            .addOnFailureListener { e ->
+                Log.e("BoardMembers", "Error getting board members", e)
+                callback(HashMap())
+            }
+    }
+
+    /**
+     * Initialize chat rooms for existing boards that don't have chat rooms
+     */
+    fun initializeChatRoomsForExistingBoards(activity: Activity) {
+        val currentUserId = getCurrentUserID()
+
+        // Get all boards for current user (regardless of role - Member or Manager)
+        mFireStore.collection(Constants.BOARDS)
+            .whereGreaterThan("assignedTo.$currentUserId", "")
+            .get()
+            .addOnSuccessListener { boardDocuments ->
+                Log.d("ChatInit", "Found ${boardDocuments.size()} boards for user")
+
+                for (boardDoc in boardDocuments) {
+                    val board = boardDoc.toObject(Board::class.java)
+                    board.documentId = boardDoc.id
+                    Log.d("ChatInit", "Processing board: ${board.name} (${board.documentId})")
+
+                    // Check if chat room exists for this board
                     mFireStore.collection(Constants.CHAT_ROOMS)
                         .whereEqualTo("boardId", board.documentId)
+                        .whereEqualTo("type", "group")
                         .get()
                         .addOnSuccessListener { chatRoomDocs ->
-                            if (chatRoomDocs.isEmpty) {
-                                // No chat room exists, create one
-                                createChatRoomForBoard(activity, board)
-                                Log.d("ChatInit", "Created chat room for board: ${board.name}")
-                            } else {
-                                Log.d(
-                                    "ChatInit",
-                                    "Chat room already exists for board: ${board.name}"
-                                )
+                            when {
+                                chatRoomDocs.isEmpty -> {
+                                    // No chat room exists, create one
+                                    Log.d("ChatInit", "Creating chat room for board: ${board.name}")
+                                    createChatRoomForBoard(activity, board)
+                                }
+
+                                chatRoomDocs.size() == 1 -> {
+                                    // Exactly one chat room exists, update participants to match board
+                                    val chatRoomId = chatRoomDocs.documents[0].id
+                                    Log.d(
+                                        "ChatInit",
+                                        "Updating participants for existing chat room: $chatRoomId"
+                                    )
+                                    mFireStore.collection(Constants.CHAT_ROOMS)
+                                        .document(chatRoomId)
+                                        .update("participants", board.assignedTo)
+                                        .addOnSuccessListener {
+                                            Log.d(
+                                                "ChatInit",
+                                                "Updated participants for board: ${board.name}"
+                                            )
+                                        }
+                                        .addOnFailureListener { e ->
+                                            Log.e(
+                                                "ChatInit",
+                                                "Failed to update participants for board: ${board.name}",
+                                                e
+                                            )
+                                        }
+                                }
+
+                                else -> {
+                                    // Multiple chat rooms found - cleanup duplicates
+                                    Log.w(
+                                        "ChatInit",
+                                        "Found ${chatRoomDocs.size()} chat rooms for board: ${board.name}, cleaning up..."
+                                    )
+                                    cleanupDuplicateChatRooms(activity, board.documentId!!)
+                                }
                             }
                         }
                         .addOnFailureListener { e ->
@@ -959,45 +1187,119 @@ class FirestoreClass {
     }
 
     /**
-     * Create a new chat room for a board/project
+     * Create a new chat room for a board/project (only if one doesn't exist)
      */
     fun createChatRoomForBoard(activity: Activity, board: Board) {
-        val chatRoom = ChatRoom(
-            name = "${board.name} - Team Chat",
-            description = "Team chat for ${board.name}",
-            type = "group",
-            participants = board.assignedTo, // Use the same participants as the board
-            boardId = board.documentId!!,
-            createdBy = getCurrentUserID(),
-            createdAt = System.currentTimeMillis()
+        Log.d(
+            "ChatRoom",
+            "=== Creating chat room for board: ${board.name} (${board.documentId}) ==="
         )
+        Log.d("ChatRoom", "Board participants: ${board.assignedTo}")
 
+        // First check if a chat room already exists for this board
         mFireStore.collection(Constants.CHAT_ROOMS)
-            .add(chatRoom)
-            .addOnSuccessListener { documentReference ->
-                Log.d("ChatRoom", "Chat room created successfully: ${documentReference.id}")
-                // Update the chat room with its own ID
-                val chatRoomId = documentReference.id
-                mFireStore.collection(Constants.CHAT_ROOMS)
-                    .document(chatRoomId)
-                    .update("id", chatRoomId)
-                    .addOnSuccessListener {
-                        Log.d("ChatRoom", "Chat room ID updated successfully")
-                    }
+            .whereEqualTo("boardId", board.documentId)
+            .whereEqualTo("type", "group")
+            .get()
+            .addOnSuccessListener { existingChatRooms ->
+                Log.d(
+                    "ChatRoom",
+                    "Found ${existingChatRooms.size()} existing chat rooms for board: ${board.documentId}"
+                )
+
+                if (existingChatRooms.isEmpty) {
+                    // No chat room exists, create a new one
+                    Log.d("ChatRoom", "Creating new chat room for board: ${board.name}")
+
+                    val chatRoom = ChatRoom(
+                        name = "${board.name} - Team Chat",
+                        description = "Team chat for ${board.name}",
+                        type = "group",
+                        participants = board.assignedTo, // Use the same participants as the board
+                        boardId = board.documentId!!,
+                        createdBy = getCurrentUserID(),
+                        createdAt = System.currentTimeMillis()
+                    )
+
+                    Log.d("ChatRoom", "Chat room participants: ${chatRoom.participants}")
+
+                    mFireStore.collection(Constants.CHAT_ROOMS)
+                        .add(chatRoom)
+                        .addOnSuccessListener { documentReference ->
+                            val chatRoomId = documentReference.id
+                            Log.d("ChatRoom", "✅ Chat room created successfully: $chatRoomId")
+
+                            // Update the chat room with its own ID
+                            mFireStore.collection(Constants.CHAT_ROOMS)
+                                .document(chatRoomId)
+                                .update("id", chatRoomId)
+                                .addOnSuccessListener {
+                                    Log.d(
+                                        "ChatRoom",
+                                        "✅ Chat room ID updated successfully: $chatRoomId"
+                                    )
+                                }
+                                .addOnFailureListener { e ->
+                                    Log.e("ChatRoom", "❌ Failed to update chat room ID", e)
+                                }
+                        }
+                        .addOnFailureListener { e ->
+                            Log.e(
+                                "ChatRoom",
+                                "❌ Error creating chat room for board: ${board.name}",
+                                e
+                            )
+                        }
+                } else {
+                    // Chat room already exists, update participants if needed
+                    val existingChatRoom = existingChatRooms.documents[0]
+                    val chatRoomId = existingChatRoom.id
+
+                    Log.d(
+                        "ChatRoom",
+                        "Chat room already exists: $chatRoomId, updating participants"
+                    )
+
+                    // Update participants to match current board members
+                    val updates = hashMapOf<String, Any>(
+                        "participants" to board.assignedTo,
+                        "name" to "${board.name} - Team Chat" // Also update name in case board name changed
+                    )
+
+                    mFireStore.collection(Constants.CHAT_ROOMS)
+                        .document(chatRoomId)
+                        .update(updates)
+                        .addOnSuccessListener {
+                            Log.d(
+                                "ChatRoom",
+                                "✅ Updated participants for existing chat room: $chatRoomId"
+                            )
+                            Log.d("ChatRoom", "Updated participants: ${board.assignedTo}")
+                        }
+                        .addOnFailureListener { e ->
+                            Log.e("ChatRoom", "❌ Error updating chat room participants", e)
+                        }
+                }
             }
             .addOnFailureListener { e ->
-                Log.e("ChatRoom", "Error creating chat room", e)
+                Log.e(
+                    "ChatRoom",
+                    "❌ Error checking existing chat rooms for board: ${board.documentId}",
+                    e
+                )
             }
     }
 
     /**
      * Get all chat rooms for the current user
+     *
+     * Shows any chat room where the user is a participant (Member or Manager or other roles).
      */
     fun getChatRooms(activity: ChatRoomsActivity) {
         val currentUserId = getCurrentUserID()
 
         mFireStore.collection(Constants.CHAT_ROOMS)
-            .whereEqualTo("participants.$currentUserId", "Member")
+            .whereGreaterThan("participants.$currentUserId", "")
             .get()
             .addOnSuccessListener { documents ->
                 val chatRoomsList = ArrayList<ChatRoom>()
