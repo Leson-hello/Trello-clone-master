@@ -84,4 +84,11 @@
     <string name="mark_all_read">Mark All Read</string>
     <string name="clear_all">Clear All</string>
 
+    <!-- Calendar Activity Strings -->
+    <string name="tasks_for_selected_date">Tasks for Selected Date</string>
+    <string name="no_tasks_on_selected_date">No tasks on this date</string>
+    <string name="nav_calendar">Calendar</string>
+
+    <!-- Calendar Task Strings -->
+    <string name="assigned_to_count">%d assigned</string>
 </resources>

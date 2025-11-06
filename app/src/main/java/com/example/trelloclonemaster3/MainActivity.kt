@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.example.trelloclonemaster3.activities.*
+import com.example.trelloclonemaster3.activities.CalendarActivity
 import com.example.trelloclonemaster3.adapters.BoardItemAdapter
 import com.example.trelloclonemaster3.firebase.FirestoreClass
 import com.example.trelloclonemaster3.model.Board
@@ -114,6 +115,9 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
             }
             R.id.nav_my_tasks -> {
                 startActivity(Intent(this, MyTasksActivity::class.java))
+            }
+            R.id.nav_calendar -> {
+                startActivity(Intent(this, CalendarActivity::class.java))
             }
             R.id.nav_chat -> {
                 startActivity(Intent(this, ChatRoomsActivity::class.java))

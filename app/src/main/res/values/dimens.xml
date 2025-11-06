@@ -22,6 +22,7 @@
     <dimen name="authentication_description_text_size">16sp</dimen>
     <dimen name="authentication_screen_marginStartEnd">25dp</dimen>
     <dimen name="authentication_screen_card_view_marginTop">60dp</dimen>
+    <dimen name="card_view_margin">8dp</dimen>
     <dimen name="card_view_elevation">10dp</dimen>
     <dimen name="card_view_corner_radius">10dp</dimen>
     <dimen name="card_view_layout_content_padding">16dp</dimen>
@@ -152,6 +153,8 @@
     <dimen name="button_padding_horizontal">16dp</dimen>
     <dimen name="item_board_action_button_text_size">16sp</dimen>
 
+    <!-- Card View Dimensions -->
+
     <!-- Notification dimensions -->
     <dimen name="item_notification_margin">8dp</dimen>
     <dimen name="card_corner_radius">8dp</dimen>
@@ -167,5 +170,31 @@
     <dimen name="item_notification_footer_margin_top">8dp</dimen>
     <dimen name="notification_project_text_size">12sp</dimen>
     <dimen name="notification_time_text_size">12sp</dimen>
+
+    <!-- Calendar Activity Dimensions -->
+    <dimen name="calendar_month_padding">16dp</dimen>
+    <dimen name="calendar_month_text_size">20sp</dimen>
+    <dimen name="calendar_selected_date_padding">12dp</dimen>
+    <dimen name="calendar_selected_date_text_size">16sp</dimen>
+    <dimen name="calendar_tasks_padding">16dp</dimen>
+    <dimen name="calendar_tasks_header_text_size">18sp</dimen>
+    <dimen name="calendar_tasks_header_margin_bottom">8dp</dimen>
+    <dimen name="calendar_tasks_margin_top">8dp</dimen>
+    <dimen name="calendar_no_tasks_text_size">16sp</dimen>
+
+    <!-- Calendar Task Item Dimensions -->
+    <dimen name="calendar_task_item_padding">12dp</dimen>
+    <dimen name="calendar_task_color_indicator_width">4dp</dimen>
+    <dimen name="calendar_task_color_indicator_margin">8dp</dimen>
+    <dimen name="calendar_task_name_text_size">16sp</dimen>
+    <dimen name="calendar_task_details_margin_top">4dp</dimen>
+    <dimen name="calendar_task_time_text_size">12sp</dimen>
+    <dimen name="calendar_task_status_margin_start">8dp</dimen>
+    <dimen name="calendar_task_status_padding_horizontal">6dp</dimen>
+    <dimen name="calendar_task_status_padding_vertical">2dp</dimen>
+    <dimen name="calendar_task_status_text_size">10sp</dimen>
+    <dimen name="calendar_task_assigned_margin_start">8dp</dimen>
+    <dimen name="calendar_task_assigned_drawable_padding">4dp</dimen>
+    <dimen name="calendar_task_assigned_text_size">12sp</dimen>
 
 </resources>

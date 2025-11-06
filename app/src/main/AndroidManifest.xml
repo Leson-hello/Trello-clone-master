@@ -29,6 +29,11 @@
             </intent-filter>
         </service>
         <activity
+            android:name=".activities.CalendarActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity
             android:name=".activities.ChatRoomsActivity"
             android:exported="false"
             android:screenOrientation="portrait"

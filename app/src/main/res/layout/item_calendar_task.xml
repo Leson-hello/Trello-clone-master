@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="@dimen/card_view_margin"
+    app:cardCornerRadius="@dimen/card_view_corner_radius"
+    app:cardElevation="@dimen/card_view_elevation">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="@dimen/calendar_task_item_padding">
+
+        <!-- Color indicator -->
+        <View
+            android:id="@+id/view_calendar_task_color"
+            android:layout_width="@dimen/calendar_task_color_indicator_width"
+            android:layout_height="match_parent"
+            android:layout_marginEnd="@dimen/calendar_task_color_indicator_margin"
+            android:background="@color/colorAccent"
+            android:visibility="gone" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <!-- Task name -->
+            <TextView
+                android:id="@+id/tv_calendar_task_name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Task Name"
+                android:textColor="@color/primary_text_color"
+                android:textSize="@dimen/calendar_task_name_text_size"
+                android:textStyle="bold" />
+
+            <!-- Time and Status Row -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/calendar_task_details_margin_top"
+                android:orientation="horizontal">
+
+                <!-- Due time -->
+                <TextView
+                    android:id="@+id/tv_calendar_task_due_time"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="09:00"
+                    android:textColor="@color/secondary_text_color"
+                    android:textSize="@dimen/calendar_task_time_text_size" />
+
+                <!-- Status -->
+                <TextView
+                    android:id="@+id/tv_calendar_task_status"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/calendar_task_status_margin_start"
+                    android:background="@drawable/status_background_pending"
+                    android:paddingStart="@dimen/calendar_task_status_padding_horizontal"
+                    android:paddingTop="@dimen/calendar_task_status_padding_vertical"
+                    android:paddingEnd="@dimen/calendar_task_status_padding_horizontal"
+                    android:paddingBottom="@dimen/calendar_task_status_padding_vertical"
+                    android:text="PENDING"
+                    android:textColor="@color/white"
+                    android:textSize="@dimen/calendar_task_status_text_size" />
+
+                <!-- Assigned count -->
+                <TextView
+                    android:id="@+id/tv_calendar_task_assigned"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/calendar_task_assigned_margin_start"
+                    android:drawableStart="@drawable/ic_nav_user"
+                    android:drawablePadding="@dimen/calendar_task_assigned_drawable_padding"
+                    android:gravity="center_vertical"
+                    android:text="2 assigned"
+                    android:textColor="@color/secondary_text_color"
+                    android:textSize="@dimen/calendar_task_assigned_text_size"
+                    android:visibility="gone" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</androidx.cardview.widget.CardView>

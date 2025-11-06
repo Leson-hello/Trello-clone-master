@@ -33,6 +33,10 @@ import com.example.trelloclonemaster3.model.ChatMessage
 import com.example.trelloclonemaster3.activities.ChatRoomsActivity
 import com.example.trelloclonemaster3.activities.ChatActivity
 
+// For calendar view
+import com.example.trelloclonemaster3.activities.CalendarActivity
+import com.example.trelloclonemaster3.model.Card
+
 class FirestoreClass {
 
     private val mFireStore = FirebaseFirestore.getInstance()
@@ -910,6 +914,61 @@ class FirestoreClass {
             }
     }
 
+
+    // ====================== CALENDAR/TASKS BY DUE DATE ======================
+
+    /**
+     * Function to get all tasks with due dates within a specific time range for calendar view
+     */
+    fun getTasksWithDueDatesInRange(activity: CalendarActivity, startTime: Long, endTime: Long) {
+        Log.d("FirestoreClass", "Fetching tasks with due dates between $startTime and $endTime")
+
+        mFireStore.collection(Constants.BOARDS)
+            .whereArrayContains(Constants.ASSIGNED_TO, getCurrentUserID())
+            .get()
+            .addOnSuccessListener { boardDocuments ->
+                Log.d("FirestoreClass", "Found ${boardDocuments.size()} boards")
+                val tasksWithDueDates = ArrayList<Card>()
+
+                if (boardDocuments.isEmpty()) {
+                    activity.populateTasksForMonth(tasksWithDueDates)
+                    return@addOnSuccessListener
+                }
+
+                for (boardDocument in boardDocuments) {
+                    val board = boardDocument.toObject(Board::class.java)
+                    board.documentId = boardDocument.id
+
+                    // Process all task lists in this board
+                    for (taskList in board.taskList) {
+                        for (card in taskList.cards) {
+                            // Check if card has due date and if it's assigned to current user
+                            if (card.dueDate > 0 &&
+                                card.dueDate >= startTime &&
+                                card.dueDate <= endTime &&
+                                card.assignedTo.contains(getCurrentUserID())
+                            ) {
+
+                                Log.d(
+                                    "FirestoreClass",
+                                    "Found task: ${card.name} with due date: ${card.dueDate}"
+                                )
+                                tasksWithDueDates.add(card)
+                            }
+                        }
+                    }
+                }
+                Log.d(
+                    "FirestoreClass",
+                    "Processed all boards. Found ${tasksWithDueDates.size} tasks with due dates"
+                )
+                activity.populateTasksForMonth(tasksWithDueDates)
+            }
+            .addOnFailureListener { exception ->
+                Log.e("FirestoreClass", "Error getting tasks with due dates", exception)
+                activity.onTasksLoadFailed("Error loading calendar tasks: ${exception.message}")
+            }
+    }
 
     // ====================== CHAT FUNCTIONALITY METHODS ======================
 
