@@ -3,7 +3,7 @@ plugins {
     // Cần thay 'kotlin-android' bằng ID mới để tương thích với KGP 1.9.x
     id 'org.jetbrains.kotlin.android'
     id 'com.google.gms.google-services'
-    // Add kapt plugin for Room annotation processing
+    // Add back KAPT for Room database files
     id 'kotlin-kapt'
 }
 
@@ -41,6 +41,11 @@ android {
     kotlinOptions {
         // Cần cập nhật jvmTarget lên 17 để khớp với compileOptions
         jvmTarget = '17'
+    }
+
+    // KAPT configuration to prevent compiler issues
+    kapt {
+        correctErrorTypes = true
     }
 
     // Packaging configuration to resolve duplicate META-INF files
@@ -83,11 +88,9 @@ dependencies {
     implementation 'com.google.firebase:firebase-analytics-ktx'
     implementation 'com.google.firebase:firebase-messaging-ktx'
 
-    // Room Database dependencies
+    // Room Database dependencies (for existing database files)
     implementation "androidx.room:room-runtime:$room_version"
     implementation "androidx.room:room-ktx:$room_version"
-    annotationProcessor "androidx.room:room-compiler:$room_version"
-    // Kotlin annotation processing tool (kapt) for Room
     kapt "androidx.room:room-compiler:$room_version"
 
     // Lifecycle components for asLiveData()
@@ -106,7 +109,7 @@ dependencies {
     // Cập nhật Thư viện bên thứ ba
     implementation 'de.hdodenhof:circleimageview:3.1.0' // Vẫn ổn
     implementation 'com.github.bumptech.glide:glide:4.16.0'
-    implementation 'androidx.activity:activity:1.11.0'
+    implementation 'androidx.activity:activity:1.9.2'
     annotationProcessor 'com.github.bumptech.glide:compiler:4.16.0'
 // Thêm 2 dòng này cho Retrofit
     implementation "com.squareup.retrofit2:retrofit:$retrofit_version"

@@ -922,15 +922,17 @@ class FirestoreClass {
      */
     fun getTasksWithDueDatesInRange(activity: CalendarActivity, startTime: Long, endTime: Long) {
         Log.d("FirestoreClass", "Fetching tasks with due dates between $startTime and $endTime")
+        val currentUserId = getCurrentUserID()
 
         mFireStore.collection(Constants.BOARDS)
-            .whereArrayContains(Constants.ASSIGNED_TO, getCurrentUserID())
+            .whereGreaterThan("assignedTo.$currentUserId", "")
             .get()
             .addOnSuccessListener { boardDocuments ->
-                Log.d("FirestoreClass", "Found ${boardDocuments.size()} boards")
+                Log.d("FirestoreClass", "Found ${boardDocuments.size()} boards for user: $currentUserId")
                 val tasksWithDueDates = ArrayList<Card>()
 
                 if (boardDocuments.isEmpty()) {
+                    Log.d("FirestoreClass", "No boards found for user")
                     activity.populateTasksForMonth(tasksWithDueDates)
                     return@addOnSuccessListener
                 }
@@ -938,22 +940,31 @@ class FirestoreClass {
                 for (boardDocument in boardDocuments) {
                     val board = boardDocument.toObject(Board::class.java)
                     board.documentId = boardDocument.id
+                    
+                    Log.d("FirestoreClass", "Processing board: ${board.name} with ${board.taskList.size} task lists")
 
                     // Process all task lists in this board
                     for (taskList in board.taskList) {
+                        Log.d("FirestoreClass", "Processing task list: ${taskList.title} with ${taskList.cards.size} cards")
+                        
                         for (card in taskList.cards) {
                             // Check if card has due date and if it's assigned to current user
                             if (card.dueDate > 0 &&
                                 card.dueDate >= startTime &&
                                 card.dueDate <= endTime &&
-                                card.assignedTo.contains(getCurrentUserID())
+                                card.assignedTo.contains(currentUserId)
                             ) {
 
                                 Log.d(
                                     "FirestoreClass",
-                                    "Found task: ${card.name} with due date: ${card.dueDate}"
+                                    "Found task: ${card.name} with due date: ${card.dueDate} (${java.util.Date(card.dueDate)})"
                                 )
                                 tasksWithDueDates.add(card)
+                            } else {
+                                // Debug logging for filtered out cards
+                                if (card.dueDate > 0) {
+                                    Log.d("FirestoreClass", "Card ${card.name} filtered out - dueDate: ${card.dueDate}, inRange: ${card.dueDate >= startTime && card.dueDate <= endTime}, assignedToUser: ${card.assignedTo.contains(currentUserId)}")
+                                }
                             }
                         }
                     }

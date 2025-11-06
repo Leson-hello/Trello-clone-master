@@ -134,6 +134,10 @@ class CalendarActivity : BaseActivity() {
         calendar.set(Calendar.MILLISECOND, 999)
         val endTime = calendar.timeInMillis
 
+        Log.d(TAG, "Date range: ${Date(startTime)} to ${Date(endTime)}")
+        Log.d(TAG, "Start time (ms): $startTime")
+        Log.d(TAG, "End time (ms): $endTime")
+
         FirestoreClass().getTasksWithDueDatesInRange(this, startTime, endTime)
     }
 
@@ -180,10 +184,22 @@ class CalendarActivity : BaseActivity() {
     
     fun populateTasksForMonth(tasks: ArrayList<Card>) {
         hideCustomProgressDialog()
-        
+
+        Log.d(TAG, "populateTasksForMonth called with ${tasks.size} tasks")
+
         mAllTasksWithDates.clear()
         mAllTasksWithDates.addAll(tasks)
-        
+
+        // Log each task for debugging
+        for ((index, task) in tasks.withIndex()) {
+            Log.d(
+                TAG,
+                "Task $index: ${task.name}, dueDate: ${task.dueDate} (${
+                    if (task.dueDate > 0) Date(task.dueDate) else "No due date"
+                }), assignedTo: ${task.assignedTo}"
+            )
+        }
+
         Log.d(TAG, "Received ${tasks.size} tasks with due dates for the month")
         
         // Update tasks for currently selected date
