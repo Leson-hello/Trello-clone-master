@@ -79,6 +79,24 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
         actionBar?.setDisplayHomeAsUpEnabled(false)
     }
 
+    override fun onCreateOptionsMenu(menu: android.view.Menu?): Boolean {
+        menuInflater.inflate(R.menu.main_activity_menu, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: android.view.MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.action_search -> {
+                // Launch Global Search Activity
+                val intent = android.content.Intent(this, GlobalSearchActivity::class.java)
+                startActivity(intent)
+                true
+            }
+
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
+
     private fun toogleDrawer(){
         val drawerLayout = findViewById<DrawerLayout>(R.id.drawer_layout)
         if(drawerLayout.isDrawerOpen(GravityCompat.START)){

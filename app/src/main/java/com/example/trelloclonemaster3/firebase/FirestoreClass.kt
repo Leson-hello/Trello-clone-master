@@ -67,6 +67,136 @@ class FirestoreClass {
             }
     }
 
+    // Global Search functionality
+    fun performGlobalSearch(activity: GlobalSearchActivity, query: String) {
+        Log.d("GlobalSearch", "Starting global search for query: '$query'")
+        val currentUserId = getCurrentUserID()
+        val searchResults = ArrayList<com.example.trelloclonemaster3.model.SearchResult>()
+        
+        // Counter to track completed searches
+        var completedSearches = 0
+        val totalSearches = 3 // projects, tasks, users
+        
+        fun checkSearchCompletion() {
+            completedSearches++
+            if (completedSearches == totalSearches) {
+                Log.d("GlobalSearch", "All searches completed. Found ${searchResults.size} total results")
+                activity.onSearchResultsReceived(searchResults)
+            }
+        }
+
+        // Search in projects (boards) that user has access to
+        mFireStore.collection(Constants.BOARDS)
+            .whereGreaterThan("assignedTo.$currentUserId", "")
+            .get()
+            .addOnSuccessListener { boardDocuments ->
+                Log.d("GlobalSearch", "Searching in ${boardDocuments.size()} accessible projects")
+                
+                for (document in boardDocuments) {
+                    val board = document.toObject(Board::class.java)
+                    board.documentId = document.id
+                    
+                    // Check if board name matches query (case-insensitive)
+                    if (board.name?.contains(query, ignoreCase = true) == true) {
+                        val projectResult = com.example.trelloclonemaster3.model.SearchResult(
+                            id = board.documentId!!,
+                            title = board.name!!,
+                            subtitle = "Project created by: ${getUserDisplayName(board.createdBy)}",
+                            type = com.example.trelloclonemaster3.model.SearchResultType.PROJECT,
+                            imageUrl = board.image ?: "",
+                            boardId = board.documentId!!,
+                            projectName = board.name!!
+                        )
+                        searchResults.add(projectResult)
+                        Log.d("GlobalSearch", "Found matching project: ${board.name}")
+                    }
+                }
+                checkSearchCompletion()
+            }
+            .addOnFailureListener { e ->
+                Log.e("GlobalSearch", "Error searching projects", e)
+                checkSearchCompletion()
+            }
+
+        // Search in tasks (cards) within accessible boards
+        mFireStore.collection(Constants.BOARDS)
+            .whereGreaterThan("assignedTo.$currentUserId", "")
+            .get()
+            .addOnSuccessListener { boardDocuments ->
+                Log.d("GlobalSearch", "Searching tasks in ${boardDocuments.size()} accessible projects")
+                
+                for (document in boardDocuments) {
+                    val board = document.toObject(Board::class.java)
+                    board.documentId = document.id
+                    
+                    // Search through all task lists and cards
+                    for (taskList in board.taskList) {
+                        for (card in taskList.cards) {
+                            // Check if card name matches query (case-insensitive)
+                            if (card.name.contains(query, ignoreCase = true)) {
+                                val taskResult = com.example.trelloclonemaster3.model.SearchResult(
+                                    id = generateTaskId(board.documentId!!, taskList.title!!, card.name),
+                                    title = card.name,
+                                    subtitle = "in ${board.name} • ${taskList.title} • Status: ${card.status.name}",
+                                    type = com.example.trelloclonemaster3.model.SearchResultType.TASK,
+                                    imageUrl = "",
+                                    boardId = board.documentId!!,
+                                    taskListId = taskList.title!!,
+                                    projectName = board.name!!
+                                )
+                                searchResults.add(taskResult)
+                                Log.d("GlobalSearch", "Found matching task: ${card.name} in ${board.name}")
+                            }
+                        }
+                    }
+                }
+                checkSearchCompletion()
+            }
+            .addOnFailureListener { e ->
+                Log.e("GlobalSearch", "Error searching tasks", e)
+                checkSearchCompletion()
+            }
+
+        // Search in users (team members)
+        mFireStore.collection(Constants.USERS)
+            .get()
+            .addOnSuccessListener { userDocuments ->
+                Log.d("GlobalSearch", "Searching in ${userDocuments.size()} users")
+                
+                for (document in userDocuments) {
+                    val user = document.toObject(User::class.java)
+                    
+                    // Skip current user and check if user name or email matches query
+                    if (user.id != currentUserId && 
+                        (user.name?.contains(query, ignoreCase = true) == true ||
+                         user.email?.contains(query, ignoreCase = true) == true)) {
+                        
+                        val userResult = com.example.trelloclonemaster3.model.SearchResult(
+                            id = user.id!!,
+                            title = user.name ?: "Unknown User",
+                            subtitle = user.email ?: "No email",
+                            type = com.example.trelloclonemaster3.model.SearchResultType.USER,
+                            imageUrl = user.image ?: "",
+                            boardId = "",
+                            taskListId = "",
+                            projectName = ""
+                        )
+                        searchResults.add(userResult)
+                        Log.d("GlobalSearch", "Found matching user: ${user.name}")
+                    }
+                }
+                checkSearchCompletion()
+            }
+            .addOnFailureListener { e ->
+                Log.e("GlobalSearch", "Error searching users", e)
+                checkSearchCompletion()
+            }
+    }
+
+    private fun getUserDisplayName(userId: String?): String {
+        return userId ?: "Unknown User"
+    }
+
     fun loadUserData(activity: Activity, readBoardList: Boolean = false){
         mFireStore.collection(Constants.USERS).document(getCurrentUserID()).get()
                 .addOnSuccessListener { document ->
